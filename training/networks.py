@@ -257,32 +257,6 @@ class MappingNetwork(torch.nn.Module):
                     x[:, :truncation_cutoff] = self.w_avg.lerp(x[:, :truncation_cutoff], truncation_psi)
         return x
 
-
-
-#LDR2HDR(img_resolution=img_resolution, img_channels=img_channels)
-@persistence.persistent_class
-class LDR2HDR(torch.nn.Module):
-    def __init__(self,
-        in_channels,                      # Input latent (Z) dimensionality, 0 = no latent.
-        out_channels,                      # Conditioning label (C) dimensionality, 0 = no label.
-    ):
-        super().__init__()
-        # self.in_channels = in_channels     ##
-        # self.out_channels = out_channels
-        # networks
-        self.conv1 = Conv2dLayer(in_channels, out_channels, kernel_size=1,  bias = True, activation = 'lrelu')
-        # self.conv2 = Conv2dLayer(out_channels, in_channels, kernel_size=1,  bias = True, activation = 'lrelu')
-    def forward(self, img):
-
-        img = self.conv1(img)
-        # img = self.conv2(img)
-
-        return img
-
-
-
-
-
 #----------------------------------------------------------------------------
 
 @persistence.persistent_class
@@ -322,12 +296,6 @@ class SynthesisLayer(torch.nn.Module):
         assert noise_mode in ['random', 'const', 'none']
         in_resolution = self.resolution // self.up
         misc.assert_shape(x, [None, self.weight.shape[1], in_resolution, 2*in_resolution])
-
-        # ### 
-        # batch_size, num_channels, height, width = x.shape
-        # random_index = np.random.randint(width)
-        # x = torch.cat((x[:,:,:,random_index:],x[:,:,:,:random_index]), dim=3)
-
         styles = self.affine(w)
 
         noise = None
@@ -344,12 +312,6 @@ class SynthesisLayer(torch.nn.Module):
         act_clamp = self.conv_clamp * gain if self.conv_clamp is not None else None
         x = bias_act.bias_act(x, self.bias.to(x.dtype), act=self.activation, gain=act_gain, clamp=act_clamp)
         return x
-
-
-
-
-
-
 
 #----------------------------------------------------------------------------
 
@@ -369,12 +331,6 @@ class ToRGBLayer(torch.nn.Module):
         x = modulated_conv2d(x=x, weight=self.weight, styles=styles, demodulate=False, fused_modconv=fused_modconv)
         x = bias_act.bias_act(x, self.bias.to(x.dtype), clamp=self.conv_clamp)
         return x
-
-
-
-
-
-
 #----------------------------------------------------------------------------
 
 @persistence.persistent_class
@@ -408,7 +364,6 @@ class SynthesisBlock(torch.nn.Module):
         self.num_torgb = 0
  
         if resolution>=32:
-            #out_channels_=out_channels//2
             out_channels_=out_channels
         else:
             out_channels_=out_channels
@@ -421,9 +376,7 @@ class SynthesisBlock(torch.nn.Module):
             self.conv0 = SynthesisLayer(in_channels, out_channels_, w_dim=w_dim, resolution=resolution, up=2,
                 resample_filter=resample_filter, conv_clamp=conv_clamp, channels_last=self.channels_last, **layer_kwargs)
             self.num_conv += 1
-        #self.conv1 = SynthesisLayerMobile(out_channels_, out_channels, w_dim=w_dim, resolution=resolution,
         self.conv1 = SynthesisLayer(out_channels_, out_channels, w_dim=w_dim, resolution=resolution,
-        #self.conv1 = SynthesisLayerEfficient(out_channels_, out_channels, w_dim=w_dim, resolution=resolution,
             conv_clamp=conv_clamp, channels_last=self.channels_last, **layer_kwargs)
         self.num_conv += 1
 
@@ -435,10 +388,6 @@ class SynthesisBlock(torch.nn.Module):
         if in_channels != 0 and architecture == 'resnet':
             self.skip = Conv2dLayer(in_channels, out_channels, kernel_size=1, bias=False, up=2,
                 resample_filter=resample_filter, channels_last=self.channels_last)
-        #if self.is_last or self.architecture == 'skip':
-        #if resolution >4:
-        #    self.weight = torch.nn.parameter.Parameter(torch.randn(2))
-
 
     def forward(self, x, img, ws, force_fp32=False, fused_modconv=None, **layer_kwargs):
         # misc.assert_shape(ws, [None, self.num_conv + self.num_torgb, self.w_dim])
@@ -471,9 +420,6 @@ class SynthesisBlock(torch.nn.Module):
             x = self.conv1(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
 
         # ToRGB.
-        #import pdb
-        #pdb.set_trace()
-        #weight = self.weight.to(x.dtype)
         if img is not None:
             misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution])
             img = upfirdn2d.upsample2d(img, self.resample_filter)
@@ -481,16 +427,7 @@ class SynthesisBlock(torch.nn.Module):
             y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv)
             y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
             img = img.add_(y) if img is not None else y
-            #if img is not None:
-            #    weight = self.weight.to(x.dtype)
-            #    weight = torch.nn.functional.softmax(weight,dim=0)
-            #    img = weight[0]*img+weight[1]*y
-            #else:
-            #    img = y
-               
-            #weight = self.weight.to(x.dtype)
-            #weight = torch.nn.functional.softmax(weight,dim=0)
-            #img = weight[0]*img+weight[1]*y if img is not None else y
+
         assert x.dtype == dtype
         assert img is None or img.dtype == torch.float32
         return x, img
@@ -516,13 +453,8 @@ class SynthesisNetwork(torch.nn.Module):
         self.img_resolution_log2 = int(np.log2(img_resolution))
         self.img_channels = img_channels
         self.block_resolutions = [2 ** i for i in range(2, self.img_resolution_log2 + 1)]
-        #channels_dict = {res: min(channel_base // res, channel_max) for res in self.block_resolutions} ### removed
         fp16_resolution = max(2 ** (self.img_resolution_log2 + 1 - num_fp16_res), 8)
 
-        #import pdb
-        #pdb.set_trace()
-        # orig: {4: 512, 8: 512, 16: 512, 32: 512, 64: 256, 128: 128, 256: 64}
-        # channels_dict={4: 512, 8: 512, 16: 256, 32: 256, 64: 128, 128: 64, 256: 64}
         self.num_ws = 0
         for res in self.block_resolutions:
             in_channels = channels_dict[res // 2] if res > 4 else 0
@@ -539,7 +471,6 @@ class SynthesisNetwork(torch.nn.Module):
     def forward(self, ws, **block_kwargs):
         block_ws = []
         with torch.autograd.profiler.record_function('split_ws'):
-            # misc.assert_shape(ws, [None, self.num_ws, self.w_dim])
             ws = ws.to(torch.float32)
             w_idx = 0
             for res in self.block_resolutions:
@@ -552,288 +483,6 @@ class SynthesisNetwork(torch.nn.Module):
             block = getattr(self, f'b{res}')
             x, img = block(x, img, cur_ws, **block_kwargs)
         return img
-
-
-#----------------------------------------------------------------------------
-
-# @persistence.persistent_class
-# class SynthesisLayer(torch.nn.Module):
-#     def __init__(self,
-#         in_channels,                    # Number of input channels.
-#         out_channels,                   # Number of output channels.
-#         w_dim,                          # Intermediate latent (W) dimensionality.
-#         resolution,                     # Resolution of this layer.
-#         kernel_size     = 3,            # Convolution kernel size.
-#         up              = 1,            # Integer upsampling factor.
-#         use_noise       = True,         # Enable noise input?
-#         activation      = 'lrelu',      # Activation function: 'relu', 'lrelu', etc.
-#         resample_filter = [1,3,3,1],    # Low-pass filter to apply when resampling activations.
-#         conv_clamp      = None,         # Clamp the output of convolution layers to +-X, None = disable clamping.
-#         channels_last   = False,        # Use channels_last format for the weights?
-#     ):
-#         super().__init__()
-#         self.resolution = resolution
-#         self.up = up
-#         self.use_noise = use_noise
-#         self.activation = activation
-#         self.conv_clamp = conv_clamp
-#         self.register_buffer('resample_filter', upfirdn2d.setup_filter(resample_filter))
-#         self.padding = kernel_size // 2
-#         self.act_gain = bias_act.activation_funcs[activation].def_gain
-
-#         self.affine = FullyConnectedLayer(w_dim, in_channels, bias_init=1)
-#         memory_format = torch.channels_last if channels_last else torch.contiguous_format
-#         self.weight = torch.nn.Parameter(torch.randn([out_channels, in_channels, kernel_size, kernel_size]).to(memory_format=memory_format))
-#         if use_noise:
-#             self.register_buffer('noise_const', torch.randn([resolution, 2*resolution]))
-#             self.noise_strength = torch.nn.Parameter(torch.zeros([]))
-#         self.bias = torch.nn.Parameter(torch.zeros([out_channels]))
-
-#     def forward(self, x, w, noise_mode='random', fused_modconv=True, gain=1):
-#         assert noise_mode in ['random', 'const', 'none']
-#         in_resolution = self.resolution // self.up
-#         misc.assert_shape(x, [None, self.weight.shape[1], in_resolution, 2*in_resolution])
-
-
-#         styles = self.affine(w)
-
-#         noise = None
-
-
-#         flip_weight = (self.up == 1) # slightly faster
-#         x = modulated_conv2d(x=x, weight=self.weight, styles=styles, noise=noise, up=self.up,
-#             padding=self.padding, resample_filter=self.resample_filter, flip_weight=flip_weight, fused_modconv=fused_modconv)
-
-#         act_gain = self.act_gain * gain
-#         act_clamp = self.conv_clamp * gain if self.conv_clamp is not None else None
-#         x = bias_act.bias_act(x, self.bias.to(x.dtype), act=self.activation, gain=act_gain, clamp=act_clamp)
-#         return x
-
-# @persistence.persistent_class
-# class Synthesis_LDR2HDR(torch.nn.Module):
-#     def __init__(self,
-#         w_dim,                      # Intermediate latent (W) dimensionality.
-#         img_resolution,             # Output image resolution.
-#         img_channels,               # Number of color channels.
-#         channels_dict = {4: 512, 8: 512, 16: 512, 32: 512, 64: 256, 128: 128, 256: 64},  # original 
-#         channel_base    = 32768,    # Overall multiplier for the number of channels.
-#         channel_max     = 512,      # Maximum number of channels in any layer.
-#         num_fp16_res    = 0,        # Use FP16 for the N highest resolutions.
-#         **block_kwargs,             # Arguments for SynthesisBlock.
-#     ):
-
-
-#     def forward(self, ws, **block_kwargs):
-#         pass
-
-#         return img
-
-
-
-@persistence.persistent_class
-# class Generator_org(torch.nn.Module):
-class Generator_(torch.nn.Module):
-    def __init__(self,
-        z_dim,                      # Input latent (Z) dimensionality.
-        c_dim,                      # Conditioning label (C) dimensionality.
-        w_dim,                      # Intermediate latent (W) dimensionality.
-        img_resolution,             # Output resolution.
-        img_channels,               # Number of output color channels.
-        mapping_kwargs      = {},   # Arguments for MappingNetwork.
-        synthesis_kwargs    = {},   # Arguments for SynthesisNetwork.
-        rank = 'cuda:0'
-    ):
-        super().__init__()
-        self.z_dim = z_dim
-        self.c_dim = c_dim
-        self.w_dim = w_dim
-        self.img_resolution = img_resolution
-        self.img_channels = img_channels
-        self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
-        self.num_ws = self.synthesis.num_ws
-        self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
-
-        #############################
-        # self.step_h = 4
-        # self.step_w = 4
-        # theta = torch.linspace(0, math.pi, steps=self.step_h) # 0-pi
-        # phi = torch.linspace(0, 2*math.pi, steps=self.step_w) # 0-2pi
-        # # grid_theta, grid_phi = torch.meshgrid(theta, phi, indexing='ij')
-        # grid_theta, grid_phi = torch.meshgrid(theta, phi)
-
-        # theta_sin = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)
-        # phi_cos = torch.cos(grid_phi).view(1, self.step_h, self.step_w,1)   # 0-2pi
-        # phi_sin = torch.sin(grid_phi).view(1, self.step_h, self.step_w,1)
-
-        # self.spherical_positions = torch.cat((theta_sin, phi_cos, phi_sin), dim=3).to(rank)  # 4, 4, 3
-
-
-    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
-        # b,dim = z.size()
-        # # print('----z size0:', z.shape)
-
-        # z = z.view(b,1, dim).expand(-1,self.step_h*self.step_w,-1)   # (N, Patches, dims)
-        # position_codes = self.spherical_positions.expand(b, -1,-1,-1).view(b,self.step_h*self.step_w,-1) #(N, Patches, 3)
-        # # position_codes = position_codes.view(-1, )
-        # # print('----z size1:', z.shape)
-
-        # z = torch.cat((z, position_codes), dim=2)
-        # z = z.view(-1, z.size(2))
-        # # print('----z size2:', z.shape)
-
-
-        ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
-        img = self.synthesis(ws, **synthesis_kwargs)
-
-        # img_ = rearrange(img, '(b h2 w2) c h w -> b c (h2 h) (w2 w)', h2=self.step_h, w2=self.step_w)   ####
-        return img
-
-
-
-
-@persistence.persistent_class
-# class Generator_org(torch.nn.Module):
-class Generator_org(torch.nn.Module):
-    def __init__(self,
-        z_dim,                      # Input latent (Z) dimensionality.
-        c_dim,                      # Conditioning label (C) dimensionality.
-        w_dim,                      # Intermediate latent (W) dimensionality.
-        img_resolution,             # Output resolution.
-        img_channels,               # Number of output color channels.
-        mapping_kwargs      = {},   # Arguments for MappingNetwork.
-        synthesis_kwargs    = {},   # Arguments for SynthesisNetwork.
-        rank = 'cuda:0'
-    ):
-        super().__init__()
-        self.z_dim = z_dim
-        self.c_dim = c_dim
-        self.w_dim = w_dim
-        self.img_resolution = img_resolution
-        self.img_channels = img_channels
-        self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
-        self.num_ws = self.synthesis.num_ws
-        self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
-
-        #############################
-        # self.step_h = 4
-        # self.step_w = 4
-        # theta = torch.linspace(0, math.pi, steps=self.step_h) # 0-pi
-        # phi = torch.linspace(0, 2*math.pi, steps=self.step_w) # 0-2pi
-        # # grid_theta, grid_phi = torch.meshgrid(theta, phi, indexing='ij')
-        # grid_theta, grid_phi = torch.meshgrid(theta, phi)
-
-        # theta_sin = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)
-        # phi_cos = torch.cos(grid_phi).view(1, self.step_h, self.step_w,1)   # 0-2pi
-        # phi_sin = torch.sin(grid_phi).view(1, self.step_h, self.step_w,1)
-
-        # self.spherical_positions = torch.cat((theta_sin, phi_cos, phi_sin), dim=3).to(rank)  # 4, 4, 3
-
-
-    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
-        # b,dim = z.size()
-        # # print('----z size0:', z.shape)
-
-        # z = z.view(b,1, dim).expand(-1,self.step_h*self.step_w,-1)   # (N, Patches, dims)
-        # position_codes = self.spherical_positions.expand(b, -1,-1,-1).view(b,self.step_h*self.step_w,-1) #(N, Patches, 3)
-        # # position_codes = position_codes.view(-1, )
-        # # print('----z size1:', z.shape)
-
-        # z = torch.cat((z, position_codes), dim=2)
-        # z = z.view(-1, z.size(2))
-        # # print('----z size2:', z.shape)
-
-
-        ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
-        img = self.synthesis(ws, **synthesis_kwargs)
-
-        # img_ = rearrange(img, '(b h2 w2) c h w -> b c (h2 h) (w2 w)', h2=self.step_h, w2=self.step_w)   ####
-        return img
-
-
-
-#----------------------------------------------------------------------------
-
-@persistence.persistent_class
-class Generator_position(torch.nn.Module):
-    def __init__(self,
-        z_dim,                      # Input latent (Z) dimensionality.
-        c_dim,                      # Conditioning label (C) dimensionality.
-        w_dim,                      # Intermediate latent (W) dimensionality.
-        img_resolution,             # Output resolution.
-        img_channels,               # Number of output color channels.
-        mapping_kwargs      = {},   # Arguments for MappingNetwork.
-        synthesis_kwargs    = {},   # Arguments for SynthesisNetwork.
-        rank = 'cuda:0'
-    ):
-        super().__init__()
-        self.z_dim = z_dim
-        self.c_dim = c_dim
-        self.w_dim = w_dim
-        self.img_resolution = img_resolution
-        self.img_channels = img_channels
-        self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
-        self.num_ws = self.synthesis.num_ws
-        self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
-
-        #############################
-        self.step_h = 4
-        self.step_w = 4
-        # theta = torch.linspace(0, math.pi, steps=self.step_h) # 0-pi
-        # phi = torch.linspace(0, 2*math.pi, steps=self.step_w) # 0-2pi
-
-        theta = torch.linspace(0, math.pi, steps=self.step_h+1)[:self.step_h] # 0-pi
-        phi = torch.linspace(0, 2*math.pi, steps=self.step_w+1)[:self.step_w] # 0-2pi
-
-        # grid_theta, grid_phi = torch.meshgrid(theta, phi, indexing='ij')
-        grid_theta, grid_phi = torch.meshgrid(theta, phi)
-
-        # theta_sin = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)
-        theta_sin = torch.cos(grid_theta).view(1, self.step_h, self.step_w,1)
-        phi_cos = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)*torch.cos(grid_phi).view(1, self.step_h, self.step_w,1)   # 0-2pi
-        phi_sin = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)*torch.sin(grid_phi).view(1, self.step_h, self.step_w,1)
-
-        self.spherical_positions = torch.cat((theta_sin, phi_cos, phi_sin), dim=3).to(rank)  # 4, 4, 3
-
-        # # model positions as bbox
-        self.spherical_positions_ = torch.roll(self.spherical_positions, shifts=(1, 1), dims=(1, 2))  # 4, 4, 3  ->b, 4, 4, 3
-        self.spherical_positions = torch.cat((self.spherical_positions,self.spherical_positions_), dim=3)
-
-
-    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
-        b, dim = z.size()
-        # print('----z size0:', z.shape)
-
-        z = z.view(b,1, dim).expand(-1,self.step_h*self.step_w,-1)   # (N, Patches, dims)
-        # position_codes = self.spherical_positions.expand(b, -1,-1,-1).reshape(b*self.step_h*self.step_w,1,-1) #(N, Patches, 3)
-        # c = self.spherical_positions.expand(b, -1,-1,-1).reshape(b*self.step_h*self.step_w,1,-1) #(N, Patches, 3)
-        c = self.spherical_positions.expand(b, -1,-1,-1).reshape(b*self.step_h*self.step_w,-1) #(N, Patches, 3)
-        # position_codes = position_codes.view(-1, )
-        # print('----z size1:', z.shape)
-
-        # z = torch.cat((z, position_codes), dim=2)
-        z = z.reshape(-1, z.size(2))
-        # print('----z size2:', z.shape)
-
-
-        ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
-        # b, dim = ws.size()
-        # ws = ws.reshape(b,1, dim).expand(-1,self.step_h*self.step_w,-1).reshape(b*self.step_h*self.step_w,-1)
-
-        # ws = torch.cat((ws, position_codes), dim=1)  ####
-
-        # b, num_ws, dim = ws.size()
-        # ws = ws.reshape(b,1, num_ws, dim).expand(-1,self.step_h*self.step_w,-1, -1).reshape(b*self.step_h*self.step_w, num_ws, -1)
-        # position_codes = position_codes.expand(-1,num_ws,-1)
-        # ws = torch.cat((ws, position_codes), dim=2)  ####
-
-
-        img = self.synthesis(ws, **synthesis_kwargs)
-
-        img_ = rearrange(img, '(b h2 w2) c h w -> b c (h2 h) (w2 w)', h2=self.step_h, w2=self.step_w)   ####
-        return img_
-
-
-#################################################
 
 #----------------------------------------------------------------------------
 
@@ -855,340 +504,15 @@ class Generator(torch.nn.Module):
         self.w_dim = w_dim
         self.img_resolution = img_resolution
         self.img_channels = img_channels
-        self.has_positional_coding = False
-        # self.has_positional_coding = True
-        if self.has_positional_coding:
-             self.synthesis = SynthesisNetwork(w_dim=w_dim+6, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
-        else:
-            self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
+        self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
         self.num_ws = self.synthesis.num_ws
         self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
-
-        self.ldr2hdr = LDR2HDR(in_channels=3, out_channels=3)
-
-        #############################
-        self.step_h = 4
-        self.step_w = 4
-        # theta = torch.linspace(0, math.pi, steps=self.step_h) # 0-pi
-        # phi = torch.linspace(0, 2*math.pi, steps=self.step_w) # 0-2pi
-
-        theta = torch.linspace(0, math.pi, steps=self.step_h+1)[:self.step_h] # 0-pi
-        phi = torch.linspace(0, 2*math.pi, steps=self.step_w+1)[:self.step_w] # 0-2pi
-
-        # grid_theta, grid_phi = torch.meshgrid(theta, phi, indexing='ij')
-        grid_theta, grid_phi = torch.meshgrid(theta, phi)
-
-        # theta_sin = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)
-        theta_sin = torch.cos(grid_theta).view(1, self.step_h, self.step_w,1)
-        phi_cos = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)*torch.cos(grid_phi).view(1, self.step_h, self.step_w,1)   # 0-2pi
-        phi_sin = torch.sin(grid_theta).view(1, self.step_h, self.step_w,1)*torch.sin(grid_phi).view(1, self.step_h, self.step_w,1)
-
-        self.spherical_positions = torch.cat((theta_sin, phi_cos, phi_sin), dim=3).to(rank)  # 4, 4, 3
-
-        # # model positions as bbox
-        self.spherical_positions_ = torch.roll(self.spherical_positions, shifts=(1, 1), dims=(1, 2))  # 4, 4, 3  ->b, 4, 4, 3
-        self.spherical_positions = torch.cat((self.spherical_positions, self.spherical_positions_), dim=3)
-
-        self.spherical_positions = self.spherical_positions.reshape(1, self.step_h*self.step_w, 1, -1)
-
 
     def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
         ws = self.mapping(z, None, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
         b, num_ws, dim = ws.size()
-
-        if self.has_positional_coding:
-            ws = ws.view(b, 1, num_ws, dim).expand(-1,self.step_h*self.step_w, -1, -1).reshape(b*self.step_h*self.step_w, num_ws, dim)   # (N, Patches, dims)
-            c = self.spherical_positions.expand(b, -1, num_ws,-1).reshape(b*self.step_h*self.step_w, num_ws,-1) #(N, Patches, 3)            
-            ws = torch.cat((ws,c), dim=2)
-
-
         img_ = self.synthesis(ws, **synthesis_kwargs)
-        if self.has_positional_coding:
-            img_ = rearrange(img_, '(b h2 w2) c h w -> b c (h2 h) (w2 w)', h2=self.step_h, w2=self.step_w)   ####
         return img_
-
-
-# helpers
-
-def pair(t):
-    return t if isinstance(t, tuple) else (t, t)
-
-# classes
-
-class PreNorm(nn.Module):
-    def __init__(self, dim, fn):
-        super().__init__()
-        self.norm = nn.LayerNorm(dim)
-        self.fn = fn
-    def forward(self, x, **kwargs):
-        return self.fn(self.norm(x), **kwargs)
-
-class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout = 0.):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(dim, hidden_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, dim),
-            nn.Dropout(dropout)
-        )
-    def forward(self, x):
-        return self.net(x)
-
-class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64, dropout = 0.):
-        super().__init__()
-        inner_dim = dim_head *  heads
-        project_out = not (heads == 1 and dim_head == dim)
-
-        self.heads = heads
-        self.scale = dim_head ** -0.5
-
-        self.attend = nn.Softmax(dim = -1)
-        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
-
-        self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, dim),
-            nn.Dropout(dropout)
-        ) if project_out else nn.Identity()
-
-    def forward(self, x):
-        qkv = self.to_qkv(x).chunk(3, dim = -1)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
-
-        dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
-
-        attn = self.attend(dots)
-
-        out = torch.matmul(attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
-        return self.to_out(out)
-
-class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
-        super().__init__()
-        self.layers = nn.ModuleList([])
-        for _ in range(depth):
-            self.layers.append(nn.ModuleList([
-                PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
-            ]))
-    def forward(self, x):
-        for attn, ff in self.layers:
-            x = attn(x) + x
-            x = ff(x) + x
-        return x
-
-
-
-
-
-#################################################
-@persistence.persistent_class
-class ViT(nn.Module):
-    def __init__(self, img_resolution=512):
-        super().__init__()
-        # self.z_dim = z_dim
-        # self.c_dim = c_dim
-        # self.w_dim = w_dim
-        # self.img_resolution = img_resolution
-        # self.img_channels = img_channels
-        # self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
-        # self.num_ws = self.synthesis.num_ws
-        # self.num_ws = 6
-        # self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
-
-    # def __init__(self, *, image_size, patch_size, out_dim, dim, depth, heads, mlp_dim, pool = 'all', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0.):
-    #     super().__init__()
-        image_size = (img_resolution, img_resolution) #512
-        patch_size = (16, 16)
-        out_dim = 16*16*3
-        dim = 1024
-        depth = 6
-        heads = 16
-        # mlp_dim = 2048
-        mlp_dim = 1024
-        pool = 'all' 
-        channels = 3 
-        dim_head = 64 
-        dropout = 0.
-        emb_dropout = 0.1
-        # emb_dropout = 0.1
-
-        if len(image_size)==2:
-            image_height, image_width = image_size  # eg., 100, 400
-        else:
-            image_height, image_width = pair(image_size)
-        
-        if len(patch_size) == 2:
-            patch_height, patch_width = patch_size   # 100, 25
-        else:
-            patch_height, patch_width = pair(patch_size)
-
-
-        assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
-
-        num_patches = (image_height // patch_height) * (image_width // patch_width)
-        self.num_patches = num_patches
-        print('################ num_patches:',num_patches)
-        # patch_dim = channels * patch_height * patch_width
-        assert pool in {'cls', 'mean', 'pred', 'all'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
-        
-        # self.downsampling = nn.Conv2d(3, 6, kernel_size=3, stride=2, padding=1)
-        # print('patch_height, patch_width, patch_dim, dim:',patch_height, patch_width, patch_dim, dim)
-        # self.to_patch_embedding = nn.Sequential(
-        #     Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1 = patch_height, p2 = patch_width),
-        #     # Rearrange('b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1 = patch_height, p2 = patch_width),
-        #     nn.Linear(patch_dim, dim),
-        # )
-
-        # noise_dim = 512
-        # self.mapping = nn.Linear(noise_dim, dim)     # synthesis
-
-
-        self.patch_height= patch_height
-        self.patch_width= patch_width
-
-        self.image_height= image_height
-        self.image_width= image_width
- 
-        # self.synthesis = nn.Sequential(
-
-        # )
-
-        # self.to_out = nn.Sequential(
-        #     nn.Linear(inner_dim, dim),
-        #     nn.Dropout(dropout)
-        # ) 
-
-
-
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-        self.dropout = nn.Dropout(emb_dropout)
-
-        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
-        # self.transformer = OutPaintingTransformer(dim, depth, heads, dim_head, mlp_dim, dropout)
-
-        # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-
-        self.pool = pool
-        self.to_latent = nn.Identity()
-
-        self.mlp_head = nn.Sequential(
-            nn.LayerNorm(dim),
-            nn.Linear(dim, out_dim)
-        )
-    
-    # def forward(self, noises):          # noise size: b (h w) (p1 p2 c)
-    def forward(self, ws, **block_kwargs):
-    # def forward(self, ws):
-        # n,_ = noises.shape
-        # noises_ = self.mapping(noises)     #  torch.Size([25, 24, 1024]) torch.Size([25, 3, 256, 384])
-        # x += self.pos_embedding[:, :(n + 1)]
-        n = self.num_patches
-
-        b,_ = ws.shape         ## b is batchsize
-        ws=ws.view(b,1,-1)
-        
-        # copied to n patches
-        x = ws.expand(b, n, -1).clone()  #x.expand(-1, 4)
-
-        # cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
-        # x = torch.cat((cls_tokens, x), dim=1)
-
-        x += self.pos_embedding[:, :n]    # x: torch.Size([8, 1025, 1024])
-        # print('-##################################-xx   x:',x.shape)
-
-        # print('x14 size:', x.size())
-
-        x = self.dropout(x)
-        # print('x2 size:', x.size())
-        # x = self.transformer(x, mask)  # add mask
-        x = self.transformer(x)  # add mask
-        # print('x3 size:', x.size())
-
-        # x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]   ####
-        if self.pool == 'mean':
-            x = x.mean(dim = 1)
-        elif self.pool == 'cls':
-            x = x[:, 0]
-        elif self.pool == 'all':
-            # x = x[:,:n]
-            x =  x.reshape(n*b,-1)
-        else:
-            x = x[:,-1]
-
-
-        x = self.to_latent(x)
-
-        x = self.mlp_head(x)
-        
-
-        if self.pool == 'predict':
-            patch = x.view(b, 3, 128, 32)
-            return patch
-        elif self.pool == 'mean' or self.pool == 'cls':
-            return x
-        else:  # for all patches
-            # patches = x.view(n, b, 3, 128, 32)
-            # print('x.size:', x.size())
-            # y = rearrange(x, 'b c h w -> b (c h w)')
-            patches = rearrange(x, '(b h w) (p1 p2 c) -> b c (h p1) (w p2)', h=self.image_height//self.patch_height, w=self.image_width//self.patch_width, p1=self.patch_height, p2=self.patch_width)
-            # Rearrange('(b h w) (p1 p2 c) -> b c (h p1) (w p2)', h =image_height // patch_height, w=image_width // patch_width, p1 = patch_height, p2 = patch_width),
-            # patches = self.to_patches(x)
-            return patches
-
-
-@persistence.persistent_class
-class MLP_Mapping(nn.Module):
-    def __init__(self,noise_dim=512, dim=1024):
-        super().__init__()
-        self.mapping = nn.Linear(noise_dim, dim) 
-
-    # def forward(self, x, c):sss
-    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False):
-        x = self.mapping(z)
-
-        return  x
-
-
-
-@persistence.persistent_class
-class Generator_vit(nn.Module):
-    def __init__(self,
-        z_dim,                      # Input latent (Z) dimensionality.
-        c_dim,                      # Conditioning label (C) dimensionality.
-        w_dim,                      # Intermediate latent (W) dimensionality.
-        img_resolution,             # Output resolution.
-        img_channels,               # Number of output color channels.
-        mapping_kwargs      = {},   # Arguments for MappingNetwork.
-        synthesis_kwargs    = {},   # Arguments for SynthesisNetwork.
-    ):
-        super().__init__()
-        self.z_dim = z_dim
-        self.c_dim = c_dim
-        self.w_dim = w_dim
-        self.img_resolution = img_resolution
-        self.img_channels = img_channels
-        # self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
-        # self.num_ws = self.synthesis.num_ws
-        self.num_ws = 6
-
-        self.mapping = MLP_Mapping(512,1024)
-        self.synthesis = ViT()
-
-    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
-        ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
-        x =  self.synthesis(ws, **synthesis_kwargs) 
-
-        return x
-
-
-
-        # ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
-        # img = self.synthesis(ws, **synthesis_kwargs)
 
 
 #----------------------------------------------------------------------------

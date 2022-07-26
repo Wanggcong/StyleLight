@@ -260,14 +260,7 @@ def training_loop(
     if rank == 0:
         print('Setting up training phases...')
     loss = dnnlib.util.construct_class_by_name(device=device, **ddp_modules, **loss_kwargs) # subclass of training.loss.Loss
-    hdr_or_ldr = 'ldr_hdr'
-
-    if hdr_or_ldr == 'ldr':
-        phase_list = [('G', G, G_opt_kwargs, G_reg_interval), ('D', D, D_opt_kwargs, D_reg_interval)]
-    elif hdr_or_ldr == 'hdr':
-        phase_list = [('G', G, G_opt_kwargs, G_reg_interval), ('D_', D_, D_opt_kwargs, D_reg_interval)]
-    else:
-        phase_list = [('G', G, G_opt_kwargs, G_reg_interval), ('D', D, D_opt_kwargs, D_reg_interval), ('D_', D_, D_opt_kwargs, D_reg_interval)]
+    phase_list = [('G', G, G_opt_kwargs, G_reg_interval), ('D', D, D_opt_kwargs, D_reg_interval), ('D_', D_, D_opt_kwargs, D_reg_interval)]
 
     phases = []
     # for name, module, opt_kwargs, reg_interval in :
@@ -359,13 +352,7 @@ def training_loop(
             for round_idx, (real_img, real_c, gen_z, gen_c) in enumerate(zip(phase_real_img, phase_real_c, phase_gen_z, phase_gen_c)):
                 sync = (round_idx == batch_size // (batch_gpu * num_gpus) - 1)
                 gain = phase.interval
-               
-                if hdr_or_ldr=='ldr':
-                    loss.accumulate_gradients_ldr_only(phase=phase.name, real_img=real_img, real_c=real_c, gen_z=gen_z, gen_c=gen_c, sync=sync, gain=gain)
-                elif hdr_or_ldr=='hdr':
-                    loss.accumulate_gradients_hdr_only(phase=phase.name, real_img=real_img, real_c=real_c, gen_z=gen_z, gen_c=gen_c, sync=sync, gain=gain) 
-                else:
-                    loss.accumulate_gradients(phase=phase.name, real_img=real_img, real_c=real_c, gen_z=gen_z, gen_c=gen_c, sync=sync, gain=gain)
+                loss.accumulate_gradients(phase=phase.name, real_img=real_img, real_c=real_c, gen_z=gen_z, gen_c=gen_c, sync=sync, gain=gain)
 
             # Update weights.
             phase.module.requires_grad_(False)
