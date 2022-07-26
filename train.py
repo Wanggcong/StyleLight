@@ -209,73 +209,16 @@ def setup_training_loop_kwargs(
         spec.gamma = 0.0002 * (res ** 2) / spec.mb # heuristic formula
         spec.ema = spec.mb * 10 / 32
 
-    # args.G_kwargs = dnnlib.EasyDict(class_name='training.networks.Generator', z_dim=512, w_dim=512, mapping_kwargs=dnnlib.EasyDict(), synthesis_kwargs=dnnlib.EasyDict())
-    # args.G_kwargs = dnnlib.EasyDict(class_name='training.networks.Generator', z_dim=256, w_dim=256, mapping_kwargs=dnnlib.EasyDict(), synthesis_kwargs=dnnlib.EasyDict())
-    # args.G_kwargs = dnnlib.EasyDict(class_name='training.networks.Generator', z_dim=256, w_dim=256, mapping_kwargs=dnnlib.EasyDict(), synthesis_kwargs=dnnlib.EasyDict())
-    args.G_kwargs = dnnlib.EasyDict(class_name='training.networks.Generator', z_dim=512, w_dim=512, mapping_kwargs=dnnlib.EasyDict(), synthesis_kwargs=dnnlib.EasyDict())
-    
 
+    args.G_kwargs = dnnlib.EasyDict(class_name='training.networks.Generator', z_dim=512, w_dim=512, mapping_kwargs=dnnlib.EasyDict(), synthesis_kwargs=dnnlib.EasyDict())
     args.D_kwargs = dnnlib.EasyDict(class_name='training.networks.Discriminator', block_kwargs=dnnlib.EasyDict(), mapping_kwargs=dnnlib.EasyDict(), epilogue_kwargs=dnnlib.EasyDict())
     args.G_kwargs.synthesis_kwargs.channel_base = args.D_kwargs.channel_base = int(spec.fmaps * 32768)
     args.G_kwargs.synthesis_kwargs.channel_max = args.D_kwargs.channel_max = 512
 
-    args.task_name = 'RGB_512x2-256-192-96-48x2-more-training'
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 256, 16: 256, 32: 128, 64: 128, 128: 64, 256: 64}   ###
-    #args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 256, 32: 128, 64: 128, 128: 64, 256: 64}   ###
-
-    #args.task_name = 'WeightedRGB_512_3x32_bigD' 
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 256, 16: 128, 32: 128, 64: 64, 128: 64, 256: 64}   ###
-
-    #args.task_name = '256_128_64_64_1.5biggerD_noweightedrgb' 
-    #args.task_name = '312x4-156-78-39_noweightedrgb' 
-    #args.task_name = '256_128_64_64_effi_noweightedrgb' 
-    #args.task_name = '192-96-48-48_noweightedrgb' 
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 256, 16: 128, 32: 128, 64: 64, 128: 64, 256: 64}   ###
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 256, 16: 256, 32: 256, 64: 128, 128: 64, 256: 64}   ###
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 512, 16: 256, 32: 256, 64: 128, 128: 64, 256: 64}   ###
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 512, 16: 256, 32: 224, 64: 160, 128: 72, 256: 60}   ###
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 512, 16: 256, 32: 256, 64: 128, 128: 64, 256: 64}   ###
-    # args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 512, 16: 256, 32: 192, 64: 96, 128: 48}#, 256: 48, 512: 48}   ###
-    # args.G_kwargs.synthesis_kwargs.channels_dict = {4: 256, 8: 256, 16: 256, 32: 256, 64: 128, 128: 64, 256: 32, 512: 32}#, 256: 48, 512: 48}   ###
-    # args.G_kwargs.synthesis_kwargs.channels_dict = {4: 256, 8: 256, 16: 256, 32: 256, 64: 128, 128: 64}#, 256: 32, 512: 32}#, 256: 48, 512: 48}   ###
+    args.task_name = 'StyleLight-training'
     args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 512, 64: 512, 128: 256, 256: 128, 512:64}#, 256: 32, 512: 32}#, 256: 48, 512: 48}   ###
-    
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 512, 8: 512, 16: 256, 32: 144, 64: 72, 128: 36, 256: 36}   ###
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 312, 8: 312, 16: 312,  32: 312, 64: 156, 128: 78, 256: 39} # {4: 512, 8: 512, 16: 256, 32: 256, 64: 128, 128: 64, 256: 64}   ###
-    #args.D_kwargs.channels_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 32, 256: 32}   ###
-    
-    #args.task_name = 'WeightedRGB_xy_448_to_64_bigD' 
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 448, 8: 224, 16: 149, 32: 112, 64: 90, 128: 75, 256: 64}
-
-    #args.task_name = 'log_chn_weightRGB_orig_data' 
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 256, 8: 180, 16: 128, 32: 90, 64: 64, 128: 45, 256: 32}   ###
-    #args.D_kwargs.channels_dict = {4: 256, 8: 180, 16: 128, 32: 90, 64: 64, 128: 45, 256: 32}# {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 32, 256: 32}   ###
-
-    #args.task_name = 'RGB_arccot_x_bigD' 
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 177, 8: 104, 16: 72, 32: 55, 64: 44, 128: 37, 256: 32}   ###
-    #args.D_kwargs.channels_dict = {4: 177, 8: 104, 16: 72, 32: 55, 64: 44, 128: 37, 256: 32}# {4: 256, 8: 180, 16: 128, 32: 90, 64: 64, 128: 45, 256: 32}# {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 32, 256: 32}   ###
-
-    #args.task_name = 'RGB_xy=224_bigD' 
-    #args.G_kwargs.synthesis_kwargs.channels_dict = {4: 224, 8: 112, 16: 74, 32: 56, 64: 45, 128: 37, 256: 32}   ###
-    # args.D_kwargs.channels_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 32, 256: 32} #{4: 224, 8: 112, 16: 74, 32: 56, 64: 45, 128: 37, 256: 32}# {4: 177, 8: 104, 16: 72, 32: 55, 64: 44, 128: 37, 256: 32}# {4: 256, 8: 180, 16: 128, 32: 90, 64: 64, 128: 45, 256: 32}# {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 32, 256: 32}   ###
-
-    #args.task_name = 'D_928_72_80_60'
-    #args.task_name = 'D_272_80_92_128'
-    #args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 928, 64: 72, 128: 80, 256: 60}
-
-    # args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 512, 64: 256, 128: 128}#, 256: 64, 512: 64}#, 256: 64, 512: 64} 
-    # args.D_kwargs.channels_dict = {4: 256, 8: 256, 16: 256, 32: 256, 64: 64, 128: 64}#, 256: 64, 512: 64}#, 256: 64, 512: 64} 
     args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 512, 64: 512, 128: 256, 256: 128, 512: 64}#, 256: 64, 512: 64}#, 256: 64, 512: 64} 
-    #args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 272, 64: 80, 128: 92, 256: 128} 
-    #args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 512, 64: 512, 128: 256, 256: 128 }# bigger D 
-    # args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 512, 64: 384, 128: 192, 256: 96 }# bigger D 
-    #args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 256, 32: 256, 64: 128, 128: 64, 256: 64} # smaller D
-    #args.D_kwargs.channels_dict = {4: 512, 8: 512, 16: 512, 32: 256, 64: 128, 128: 128, 256: 64} # smaller D
-    # radio_all, radio_each = macs_test(args.G_kwargs.synthesis_kwargs.channels_dict)
-    # print('compression radio:',radio_all, radio_each)
-    #if True:
-    #    print('only print macs and exit!')
-    #    return
+
 
     args.G_kwargs.mapping_kwargs.num_layers = spec.map
     args.G_kwargs.synthesis_kwargs.num_fp16_res = args.D_kwargs.num_fp16_res = 4 # enable mixed-precision training
@@ -581,8 +524,6 @@ def main(ctx, outdir, dry_run,  **config_kwargs):
       <PATH or URL>  Custom network pickle.
     """
     dnnlib.util.Logger(should_flush=True)
-    #import pdb
-    #pdb.set_trace()
     # Setup training options.
     try:
         run_desc, args = setup_training_loop_kwargs(**config_kwargs)

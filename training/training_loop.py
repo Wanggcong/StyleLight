@@ -190,10 +190,6 @@ def training_loop(
     conv2d_gradfix.enabled = True                       # Improves training speed.
     grid_sample_gradfix.enabled = True                  # Avoids errors with the augmentation pipe.
 
-
-
-    # hdr_only=True
-
     # Load training set.
     if rank == 0:
         print('Loading training set...')
@@ -208,13 +204,12 @@ def training_loop(
         print('Label shape:', training_set.label_shape)
         print()
 
-    #import pdb
-    #pdb.set_trace()
     # Construct networks.      # added
     if rank == 0:
         print('Constructing networks...')
     common_kwargs = dict(c_dim=training_set.label_dim, img_resolution=training_set.resolution, img_channels=3)
-    common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=256, img_channels=3, rank=rank)
+    # common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=256, img_channels=3, rank=rank)
+    common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=128, img_channels=3, rank=rank)
     G = dnnlib.util.construct_class_by_name(**G_kwargs, **common_kwargs_G).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
     D = dnnlib.util.construct_class_by_name(**D_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
     D_ = dnnlib.util.construct_class_by_name(**D_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module

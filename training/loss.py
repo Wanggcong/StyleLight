@@ -78,8 +78,6 @@ class StyleGAN2Loss(Loss):
         return logits
 
 
-
-
     def accumulate_gradients(self, phase, real_img, real_c, gen_z, gen_c, sync, gain):
         # assert phase in ['Gmain', 'Greg', 'Gboth', 'Dmain', 'Dreg', 'Dboth']
         assert phase in ['Gmain', 'Greg', 'Gboth', 'Dmain', 'Dreg', 'Dboth', 'D_main', 'D_reg', 'D_both']
