@@ -41,7 +41,7 @@ class TonemapHDR(object):
         if clip:
             tonemapped_img_clip = np.clip(tonemapped_img, 0, 1)
 
-        return tonemapped_img_clip.astype('float32'), alpha,tonemapped_img
+        return tonemapped_img_clip.astype('float32'), alpha, tonemapped_img
 
 
 

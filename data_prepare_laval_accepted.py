@@ -4,11 +4,13 @@ from PIL import Image
 import numpy as np
 from skylibs.envmap import EnvironmentMap, rotation_matrix
 from skylibs.hdrio import imread, imsave
+from training.tonemapping import TonemapHDR
 
 
 pano_h=128
 pano_w=256
 
+'''
 class TonemapHDR(object):
     """
         Tonemap HDR image globally. First, we find alpha that maps the (max(numpy_img) * percentile) to max_mapping.
@@ -40,7 +42,7 @@ class TonemapHDR(object):
             tonemapped_img = np.clip(tonemapped_img, 0, 1)
 
         return tonemapped_img.astype('float32'), alpha
-
+'''
 
 def pre_process_data(src_file, to_folder, phase, file_txt):
     dst_folder = os.path.join(to_folder, phase)
@@ -56,14 +58,14 @@ def pre_process_data(src_file, to_folder, phase, file_txt):
         file_paths = glob.glob(os.path.join(src_file,file_+'*'))
         print(f'k/total,files:{k}/{len(data_list)},{file_paths}')
         k = k+1
-        # if k>2:
-        #   break
+        if k>2:
+          break
         for one_path in file_paths:
             e = EnvironmentMap(one_path, 'latlong')
             if phase=='test':
                 # tone mapping
                 hdr2ldr = TonemapHDR(gamma=2.4, percentile=99, max_mapping=0.9)
-                ldr,_ = hdr2ldr(e.data)                
+                ldr,_,_ = hdr2ldr(e.data)                
                 ee = EnvironmentMap(ldr, 'latlong')
                 # crop
                 dcm = rotation_matrix(azimuth=0,elevation=0,roll=0)    
@@ -82,7 +84,7 @@ def pre_process_data(src_file, to_folder, phase, file_txt):
             imsave(os.path.join(dst_folder,one_path.split('/')[-1]), e.data)
 
 ###########
-to_folder = '/mnt/disks/data/datasets/IndoorHDRDataset2018-debug-'+str(pano_h)+'x'+str(pano_w)+'-data-splits2/'
+to_folder = '/mnt/disks/data/datasets/IndoorHDRDataset2018-debug2-'+str(pano_h)+'x'+str(pano_w)+'-data-splits2/'
 from_file = '/mnt/disks/data/datasets/IndoorHDRDataset2018'
 
 train_txt = 'train_org.txt'
