@@ -1,0 +1,4 @@
+imageio>=1.6
+tqdm
+numpy
+scipy
