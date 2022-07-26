@@ -22,12 +22,12 @@ class Loss:
 #----------------------------------------------------------------------------
 
 class StyleGAN2Loss(Loss):
-    def __init__(self, device, G_ldr2hdr, G_mapping, G_synthesis, D, D_, augment_pipe=None, style_mixing_prob=0.9, r1_gamma=10, pl_batch_shrink=2, pl_decay=0.01, pl_weight=2):
+    # def __init__(self, device, G_ldr2hdr, G_mapping, G_synthesis, D, D_, augment_pipe=None, style_mixing_prob=0.9, r1_gamma=10, pl_batch_shrink=2, pl_decay=0.01, pl_weight=2):
+    def __init__(self, device, G_mapping, G_synthesis, D, D_, augment_pipe=None, style_mixing_prob=0.9, r1_gamma=10, pl_batch_shrink=2, pl_decay=0.01, pl_weight=2):
         super().__init__()
         self.device = device
         self.G_mapping = G_mapping
         self.G_synthesis = G_synthesis
-        self.G_ldr2hdr = G_ldr2hdr
         self.D = D
         self.D_ = D_
         self.augment_pipe = augment_pipe
@@ -69,13 +69,10 @@ class StyleGAN2Loss(Loss):
 
     # for hdr
     def run_D_hdr(self, img, c, sync, isRealImage=False):
-
         if isRealImage:
             img = img[:,3:,:,:]  #(ldr,hdr) ######## diff from run_D
-
         if self.augment_pipe is not None:
             img = self.augment_pipe(img, isRealImage=isRealImage)
-    
         with misc.ddp_sync(self.D_, sync):
             logits = self.D_(img, c)
         return logits
