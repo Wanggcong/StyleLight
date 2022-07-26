@@ -54,20 +54,7 @@ class StyleGAN2Loss(Loss):
         self.pl_decay = pl_decay
         self.pl_weight = pl_weight
         self.pl_mean = torch.zeros([], device=device)
-        # self.tonemap = tonemapping.TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
 
-        # initial coor
-        # x = torch.tensor([1, 2, 3])
-        # y = torch.tensor([4, 5, 6])        
-        # grid_x, grid_y = torch.meshgrid(x, y, indexing='ij')
-        # >>> grid_x
-        # tensor([[1, 1, 1],
-        #         [2, 2, 2],
-        #         [3, 3, 3]])
-        # >>> grid_y
-        # tensor([[4, 5, 6],
-        #         [4, 5, 6],
-        #         [4, 5, 6]])
 
         self.step_h = 4
         self.step_w = 4
@@ -86,11 +73,7 @@ class StyleGAN2Loss(Loss):
         # model positions as bbox
         self.spherical_positions_ = torch.roll(self.spherical_positions, shifts=(1, 1), dims=(1, 2))  # 4, 4, 3  ->b, 4, 4, 3
         self.spherical_positions = torch.cat((self.spherical_positions,self.spherical_positions_), dim=3)
-
-
         self.spherical_positions_new = self.spherical_positions.reshape(1, self.step_h*self.step_w, 1, -1)
-
-
 
     # original
     def run_G_org(self, z, c, sync):
@@ -106,31 +89,6 @@ class StyleGAN2Loss(Loss):
         # return img, ws
         return img, img, ws
 
-
-    # # original
-    # def run_G(self, z, c, sync):
-    #     with misc.ddp_sync(self.G_mapping, sync):
-    #         ws = self.G_mapping(z, c)
-    #         if self.style_mixing_prob > 0:
-    #             with torch.autograd.profiler.record_function('style_mixing'):
-    #                 cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
-    #                 cutoff = torch.where(torch.rand([], device=ws.device) < self.style_mixing_prob, cutoff, torch.full_like(cutoff, ws.shape[1]))
-    #                 ws[:, cutoff:] = self.G_mapping(torch.randn_like(z), c, skip_w_avg_update=True)[:, cutoff:]
-    #     with misc.ddp_sync(self.G_synthesis, sync):
-    #         img_hdr = self.G_synthesis(ws)
-    #         gamma = 2.4
-    #         img_ldr = torch.clip(img_hdr, 1e-10,1e8)
-    #         img_ldr = torch.pow(img_ldr, 1 / gamma)*5
-    #         img_ldr = torch.clip(img_ldr, 0,1)
-
-    #         img_ldr = img_ldr*2-1
-
-
-
-    #     # return img, ws
-    #     return img_ldr, img_hdr, ws
-    #     # return img_hdr, img_hdr, ws     ########## for debugging
-
     # original
     def run_G_(self, z, c, sync):
         with misc.ddp_sync(self.G_mapping, sync):
@@ -142,60 +100,22 @@ class StyleGAN2Loss(Loss):
                     ws[:, cutoff:] = self.G_mapping(torch.randn_like(z), c, skip_w_avg_update=True)[:, cutoff:]
         with misc.ddp_sync(self.G_synthesis, sync):
             img_ldr_ = self.G_synthesis(ws)  # predict ldr
-
-            
             img_ldr = torch.clip(img_ldr_, -1, 1)
-            
             img_ldr_ = (img_ldr_+1)/2
-
             gamma = 2.4
             img_hdr = torch.clip(img_ldr_, 0.0, 1e8)
             img_hdr = torch.pow(img_hdr/5, gamma)
 
-
-            # img_ldr = torch.clip(img_ldr, 0,1)
-            # img_hdr = torch.clip(img_ldr_, 1e-10,1e8)
-
-
-            # img_ldr = torch.clip(img_hdr, 1e-10,1e8)
-            # img_ldr = torch.pow(img_ldr, 1 / gamma)*5
-            # img_ldr = torch.clip(img_ldr, 0,1)
-            # img_hdr = torch.clip(img_hdr, 1e-10,1e8)
-
-            # img_ldr = img_ldr*2-1
-
-
-
-        # return img, ws
         return img_ldr, img_hdr, ws
-        # return img_hdr, img_hdr, ws     ########## for debugging
 
 
     # modified
     def run_G_z_position(self, z, c, sync):
-        # add coor into z, where z is wit size of (N, dim)
-
-        # expand, (N, dim) -> (N, Patches, dims)
-
-        # (cos(theta), sin(theta), sin(phi)), (Patches, 3) expand --> (N, Patches, 3)
-        # concat and reshape, (N, Patches, dims+3)
-
         b,dim = z.size()
-        # print('z size0:', z.shape)
-
         z = z.view(b,1, dim).expand(-1,self.step_h*self.step_w,-1)   # (N, Patches, dims)
-
         position_codes = self.spherical_positions.expand(b, -1,-1,-1).reshape(b*self.step_h*self.step_w,1,-1) #(N, Patches, 3)
-        # c = self.spherical_positions.expand(b, -1,-1,-1).reshape(b*self.step_h*self.step_w,1,-1) #(N, Patches, 3)
-
         c = self.spherical_positions.expand(b, -1,-1,-1).reshape(b*self.step_h*self.step_w,-1) #(N, Patches, 3)
-        # position_codes = position_codes.view(-1, )
-        # print('z size1:', z.shape)
-
-        # z = torch.cat((z, position_codes), dim=2)
         z = z.reshape(-1, z.size(2))
-        # print('z size2:', z.shape)
-
         
         with misc.ddp_sync(self.G_mapping, sync):
             ws = self.G_mapping(z, c)
@@ -204,11 +124,7 @@ class StyleGAN2Loss(Loss):
                     cutoff = torch.empty([], dtype=torch.int64, device=ws.device).random_(1, ws.shape[1])
                     cutoff = torch.where(torch.rand([], device=ws.device) < self.style_mixing_prob, cutoff, torch.full_like(cutoff, ws.shape[1]))
                     ws[:, cutoff:] = self.G_mapping(torch.randn_like(z), c, skip_w_avg_update=True)[:, cutoff:]
-        # print('ws size:', ws.size())
-        # b, num_ws, dim = ws.size()
-        # ws = ws.reshape(b,1, num_ws, dim).expand(-1,self.step_h*self.step_w,-1, -1).reshape(b*self.step_h*self.step_w, num_ws, -1)
-        # position_codes = position_codes.expand(-1,num_ws,-1)
-        # ws = torch.cat((ws, position_codes), dim=2)  ####
+
         with misc.ddp_sync(self.G_synthesis, sync):
             img = self.G_synthesis(ws)
         
@@ -223,9 +139,6 @@ class StyleGAN2Loss(Loss):
         gamma = 2.4
         img_hdr = torch.clip(img_ldr_, 0.0, 1e8)
         img_hdr = torch.pow(img_hdr/5, gamma)
-
-
-        # return img, img_, ws
         return img_ldr, img_hdr, ws, img
 
     # modified, ws+ position
@@ -265,60 +178,12 @@ class StyleGAN2Loss(Loss):
             # img_hdr = torch.clip(img_shared, -1, 100)
             img_hdr = torch.clip(img_shared, -1, 10)
 
-
-        hdr_clip = False
-        if hdr_clip:
-            img_hdr = torch.clip(img_hdr-1, 0, 1e8)
-        else:
-            img_hdr = torch.clip(img_hdr, -1, 1e8)
-
-
-        ldr2hdr = False
-        hdr_layer = False
-        if ldr2hdr:
-            img_hdr = (img_hdr+1)/2
-            gamma = 2.4
-            img_hdr = torch.clip(img_hdr, 1e-10, 1e8)  ##### use (img_ldr_+1)/2 to lift up img_ldr_
-            # img_hdr = torch.pow(img_hdr/5, gamma)  ### remove 5
-            img_hdr = torch.pow(img_hdr, gamma)  ### remove 5
-            if hdr_layer:
-                img_hdr = self.G_ldr2hdr(img_hdr)
-            # img_hdr = torch.clip(img_hdr, 1e-10, 1e8) # remove
-
-        # if use_new_tonemapping:
-        #     # img_hdr = img_ldr_2-1  #- is changed into +
-        #     img_hdr = (img_hdr+1)/2
-        #     img_hdr = torch.clip(img_ldr_2, -1, 100)  #- is changed into +
-        # else:
-        #     gamma = 2.4
-        #     img_hdr = torch.clip(img_ldr_, 0.0, 1e8)  ##### use (img_ldr_+1)/2 to lift up img_ldr_
-        #     img_hdr = torch.pow(img_hdr/5, gamma)
-
-        use_old_tonemapping = False     #######
-        if use_old_tonemapping:
-            img_hdr = (img_hdr+1)/2
-            gamma = 2.4
-            img_hdr = torch.clip(img_hdr, 1e-10, 1e8)  ##### use (img_ldr_+1)/2 to lift up img_ldr_
-            img_hdr = torch.pow(img_hdr/5, gamma)     
-
-        multi_tonemapping = False
-        if multi_tonemapping:
-            img_hdr = (img_hdr+1)/2
-            gamma = 2.4
-            level = [0.01,0.02,0.04]
-            aa = torch.pow(img_hdr, gamma)*level[0]
-            bb = torch.pow(img_hdr, gamma)*level[1]
-            cc = torch.pow(img_hdr, gamma)*level[2]
-            img_hdr = (aa+bb+cc)/3.0
-
-
-
+        img_hdr = torch.clip(img_hdr, -1, 1e8)
         # return img, img_, ws
         return img_ldr, img_hdr, ws, img
 
     # modified, ws+ position
     def run_G_hdr2ldr(self, z, c, sync):
-     
         with misc.ddp_sync(self.G_mapping, sync):
             # ws = self.G_mapping(z, c)
             ws = self.G_mapping(z, None)
@@ -328,66 +193,16 @@ class StyleGAN2Loss(Loss):
                     cutoff = torch.where(torch.rand([], device=ws.device) < self.style_mixing_prob, cutoff, torch.full_like(cutoff, ws.shape[1]))
                     ws[:, cutoff:] = self.G_mapping(torch.randn_like(z), c, skip_w_avg_update=True)[:, cutoff:]
 
-        has_positional_coding = False
-        # has_positional_coding = True
-        if has_positional_coding:
-            b, num_ws, dim = ws.size()
-            ws = ws.view(b, 1, num_ws, dim).expand(-1,self.step_h*self.step_w, -1, -1).reshape(b*self.step_h*self.step_w, num_ws, dim)   # (N, Patches, dims)
-            c = self.spherical_positions_new.expand(b, -1, num_ws,-1).reshape(b*self.step_h*self.step_w, num_ws, -1) #(N, Patches, 3)
-            ws = torch.cat((ws,c), dim=2)
-
-
         with misc.ddp_sync(self.G_synthesis, sync):
             img = self.G_synthesis(ws)
         
-        # reshape patches into an image
-        # patches = rearrange(x, '(b h w) (p1 p2 c) -> b c (h p1) (w p2)', h=self.image_height//self.patch_height, w=self.image_width//self.patch_width, p1=self.patch_height, p2=self.patch_width)
-        if has_positional_coding:
-            img_shared = rearrange(img, '(b h2 w2) c h w -> b c (h2 h) (w2 w)', h2=self.step_h, w2=self.step_w)   ####
-            # img_hdr = torch.clip(img_shared, 0, 1e8)
-            img_hdr = torch.clip(img_shared, -1, 1e8)
-            # img_ldr = self.tonemap(img_hdr)
-            # img_ldr = tonemapping(img_hdr)
-        else:
-            img_shared = img
-            # img_hdr = torch.clip(img_shared, 0, 1e8)
-            img_hdr = torch.clip(img_shared, -1, 1e8)
-            # img_ldr = self.tonemap(img_hdr)
-            # img_ldr = tonemapping(img_hdr)
+        img_shared = img
+        img_hdr = torch.clip(img_shared, -1, 1e8)
 
-
-        #########
-        use_old_tonemapping = False     #######
-
-        hdr_clip = False
-        if hdr_clip:
-            img_hdr = torch.clip(img_hdr, 1, 1e8)
-
-        ldr2hdr = False
-        if ldr2hdr:
-            img_hdr = (img_hdr+1)/2
-            gamma = 2.4
-            img_hdr = torch.clip(img_hdr, 1e-10, 1e8)  ##### use (img_ldr_+1)/2 to lift up img_ldr_
-            # img_hdr = torch.pow(img_hdr/5, gamma)  ### remove 5
-            img_hdr = torch.pow(img_hdr, gamma)  ### remove 5
-
-            img_hdr = self.G_ldr2hdr(img_hdr)
-            # img_hdr = torch.clip(img_hdr, 1e-10, 1e8) # remove
-
-        if use_old_tonemapping:
-            img_hdr = (img_hdr+1)/2
-            gamma = 2.4
-            img_hdr = torch.clip(img_hdr, 1e-10, 1e8)  ##### use (img_ldr_+1)/2 to lift up img_ldr_
-            img_hdr = torch.pow(img_hdr/5, gamma)     
-
-        # return img, img_, ws
         return img_ldr, img_hdr, ws, img
-
-
 
     # for ldr
     def run_D(self, img, c, sync, isRealImage=False):
-
         if isRealImage:
             img = img[:,:3,:,:]    ##(ldr,hdr)
             # img = img[:,3:,:,:]    ##(ldr,hdr)
@@ -398,7 +213,7 @@ class StyleGAN2Loss(Loss):
             # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
             images_np = np.clip(images_np*255, 0, 255)
             im_ = Image.fromarray((images_np).astype(np.uint8))
-            im_.save('AugmentPipe_xxx_yyy_zzz_before.png')
+            # im_.save('AugmentPipe_xxx_yyy_zzz_before.png')
 
 
         if isRealImage:
@@ -408,11 +223,8 @@ class StyleGAN2Loss(Loss):
             # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
             images_np = np.clip(images_np*255, 0, 255)
             im_ = Image.fromarray((images_np).astype(np.uint8))
-            im_.save('AugmentPipe_xxx_yyy_zzz.png')
+            # im_.save('AugmentPipe_xxx_yyy_zzz.png')
 
-        # img = np.rint(img).clip(0, 255).astype(np.uint8)
-        # img = np.clip(img*255, 0, 255).astype(np.uint8)
-        # img = torch.clip(img, 0, 1)#.astype(np.uint8)
         
         if self.augment_pipe is not None:
             img = self.augment_pipe(img, isRealImage=isRealImage)
@@ -424,7 +236,7 @@ class StyleGAN2Loss(Loss):
             # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
             images_np = np.clip(images_np*255, 0, 255)
             im_ = Image.fromarray((images_np).astype(np.uint8))
-            im_.save('AugmentPipe_xxx_yyy_zzz_aug.png')
+            # im_.save('AugmentPipe_xxx_yyy_zzz_aug.png')
 
         with misc.ddp_sync(self.D, sync):
             # print('img shape:',img.shape)
@@ -438,54 +250,15 @@ class StyleGAN2Loss(Loss):
             # img = img[:,:3,:,:]  #(ldr,hdr), for debugging
             img = img[:,3:,:,:]  #(ldr,hdr)                      ######################## diff from run_D
 
-        # if isRealImage:
-        #     image =(img[0,:,:,:]+1)/2
-        #     images_np = image.cpu().detach().numpy().transpose(1,2,0)#*5
-        #     # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-        #     images_np = np.clip(images_np*255, 0, 255)
-        #     im_ = Image.fromarray((images_np).astype(np.uint8))
-        #     im_.save('AugmentPipe_xxx_yyy_zzz_before.png')
-
-        # if isRealImage:
-        #     # image =img[0,:,:,:]
-        #     image =(img[0,:,:,:]+1)/2
-        #     images_np = image.cpu().detach().numpy().transpose(1,2,0)#*5
-        #     # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-        #     images_np = np.clip(images_np*255, 0, 255)
-        #     im_ = Image.fromarray((images_np).astype(np.uint8))
-        #     im_.save('AugmentPipe_xxx_yyy_zzz.png')
-
-        
         if self.augment_pipe is not None:
             img = self.augment_pipe(img, isRealImage=isRealImage)
-        
-        # if isRealImage:
-        #     # image =img[0,:,:,:]
-        #     image =(img[0,:,:,:]+1)/2
-        #     images_np = image.cpu().detach().numpy().transpose(1,2,0)#*5
-        #     # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-        #     images_np = np.clip(images_np*255, 0, 255)
-        #     im_ = Image.fromarray((images_np).astype(np.uint8))
-        #     im_.save('AugmentPipe_xxx_yyy_zzz_aug.png')
-
+    
         with misc.ddp_sync(self.D_, sync):
             logits = self.D_(img, c)
         return logits
 
 
     def run_D_old(self, img, c, sync, isRealImage=False):
-        # image =img[0,:,:,:]
-        # images_np = image.cpu().detach().numpy().transpose(1,2,0)
-        # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-        # im_ = Image.fromarray((images_np).astype(np.uint8))
-        # im_.save('AugmentPipe.png')
-        # image =img[0,:,:,:]
-        # images_np = image.cpu().detach().numpy().transpose(1,2,0)
-        # # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-        # images_np = np.clip(images_np*255, 0, 255)
-        # im_ = Image.fromarray((images_np).astype(np.uint8))
-        # im_.save('AugmentPipe_xxx.png')
-
         gamma = 2.4
         # percentile=50
         percentile=0.99
@@ -499,46 +272,27 @@ class StyleGAN2Loss(Loss):
             img = self.augment_pipe(img, isRealImage=isRealImage)
         with misc.ddp_sync(self.D_, sync):
             # img: from hdr->ldr
-            #########################################
-            # print('-----#$@img max and min:',img.max(), img.min())
             img = torch.clip(img, 1e-10,1e8)
             img_power = torch.pow(img, 1 / gamma)
-            # non_zero = img_power > 0
-            # if non_zero.any():
-            #     r_percentile = torch.quantile(img_power[non_zero], percentile)
-            # else:
-            #     r_percentile = torch.quantile(img_power, percentile)
 
-            # if alpha is None:
-            #     alpha = max_mapping / (r_percentile + 1e-10)
-            # alpha = max_mapping / (r_percentile + 1e-10)
-            
             alpha = 5.0
 
             # tonemapped_img = np.multiply(alpha, img_power)
             tonemapped_img = alpha*img_power
             tonemapped_img = torch.clip(tonemapped_img, 0, 1)
-            #########################################
-            # print('alpha:',alpha)
-            # print('tonemapped_img:',tonemapped_img)
+
             if isRealImage:
                 image =tonemapped_img[0,:,:,:]
                 images_np = image.cpu().detach().numpy().transpose(1,2,0)#*5
                 # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
                 images_np = np.clip(images_np*255, 0, 255)
                 im_ = Image.fromarray((images_np).astype(np.uint8))
-                im_.save('AugmentPipe_xxx_yyy.png')
+                # im_.save('AugmentPipe_xxx_yyy.png')
                 
             # logits = self.D_(tonemapped_img, c)
             logits = self.D(tonemapped_img, c)
         return logits
 
-
-
-    
-    # could be wrong, self.run_G returns hdr, ldr---> modifed into ldr, hdr, not sure if the order is changed 
-    # def accumulate_gradients_hdr_only(self, phase, real_img, real_c, gen_z, gen_c, sync, gain):
-    # could be wrong, self.run_G returns hdr, ldr---> modifed into ldr, hdr, not sure if the order is changed 
     def accumulate_gradients_hdr_only(self, phase, real_img, real_c, gen_z, gen_c, sync, gain):
         # assert phase in ['Gmain', 'Greg', 'Gboth', 'Dmain', 'Dreg', 'Dboth']
         assert phase in ['Gmain', 'Greg', 'Gboth', 'Dmain', 'Dreg', 'Dboth', 'D_main', 'D_reg', 'D_both']
@@ -561,10 +315,7 @@ class StyleGAN2Loss(Loss):
                 loss_Gmain_ = torch.nn.functional.softplus(-gen_logits_) # -log(sigmoid(gen_logits))
                 # training_stats.report('Loss/G/loss', loss_Gmain+loss_Gmain_)
             with torch.autograd.profiler.record_function('Gmain_backward'):
-                # loss_Gmain.mean().mul(gain).backward()
                 loss_Gmain_.mean().mul(gain).backward()
-                # (loss_Gmain+loss_Gmain_).mean().mul(gain).backward()
-                # loss_Gmain_.mean().mul(gain).backward()
 
         # Gpl: Apply path length regularization.
         if do_Gpl:
@@ -572,18 +323,9 @@ class StyleGAN2Loss(Loss):
                 batch_size = gen_z.shape[0] // self.pl_batch_shrink
                 gen_img_ldr, gen_img_hdr, gen_ws, img = self.run_G(gen_z[:batch_size], gen_c[:batch_size], sync=sync)
                 pl_noise = torch.randn_like(img) / np.sqrt(img.shape[2] * img.shape[3])
-                # print('gen_img:',gen_img.shape)
-                # print('pl_noise:',pl_noise.shape)
-                # print('gen_ws:',gen_ws.shape)
-                # print('gen_c:',gen_c)
-                # if len(gen_ws.shape)==2:
-                #     gen_ws = gen_ws.view(gen_ws.size(0),-1,gen_ws.size(1))
 
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients():
-                    # pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
                     pl_grads = torch.autograd.grad(outputs=[(img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
-                # pl_lengths = pl_grads.square().sum(2).mean(1).sqrt()
-                # print('pl_grads shape:',pl_grads.shape)
                 if len(gen_ws.shape)==2:
                     pl_lengths = pl_grads.square().sum(1).sqrt()
                 else:
@@ -645,14 +387,12 @@ class StyleGAN2Loss(Loss):
                 training_stats.report('Loss/signs/real', real_logits.sign())
 
                 loss_Dreal = 0
-                # loss_Dreal_ = 0
                 if do_Dmain:
                     loss_Dreal = torch.nn.functional.softplus(-real_logits) # -log(sigmoid(real_logits))
                     # loss_Dreal_ = torch.nn.functional.softplus(-real_logits_) # -log(sigmoid(real_logits))
                     training_stats.report('Loss/D/loss', loss_Dgen + loss_Dreal)
 
                 loss_Dr1 = 0
-                # loss_Dr1_ = 0
                 if do_Dr1:
                     with torch.autograd.profiler.record_function('r1_grads'), conv2d_gradfix.no_weight_gradients():
                         r1_grads = torch.autograd.grad(outputs=[real_logits.sum()], inputs=[real_img_tmp], create_graph=True, only_inputs=True)[0]
@@ -666,9 +406,6 @@ class StyleGAN2Loss(Loss):
 
             with torch.autograd.profiler.record_function(name + '_backward'):
                 (real_logits * 0 + loss_Dreal + loss_Dr1).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + loss_Dreal + loss_Dreal_+loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + 0*loss_Dreal + loss_Dreal_+0*loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-
 
         # Dmain: Maximize logits for real images.
         # Dr1: Apply R1 regularization.
@@ -702,10 +439,7 @@ class StyleGAN2Loss(Loss):
                     training_stats.report('Loss/D/reg_', loss_Dr1_)
 
             with torch.autograd.profiler.record_function(name + '_backward_'):
-                # (real_logits * 0 + loss_Dreal + loss_Dr1).mean().mul(gain).backward()
                 (real_logits_ * 0 + loss_Dreal_ + loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + loss_Dreal + loss_Dreal_+loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + 0*loss_Dreal + loss_Dreal_+0*loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
 
     # could be wrong, self.run_G returns hdr, ldr---> modifed into ldr, hdr, not sure if the order is changed 
     def accumulate_gradients(self, phase, real_img, real_c, gen_z, gen_c, sync, gain):
@@ -730,10 +464,7 @@ class StyleGAN2Loss(Loss):
                 loss_Gmain_ = torch.nn.functional.softplus(-gen_logits_) # -log(sigmoid(gen_logits))
                 # training_stats.report('Loss/G/loss', loss_Gmain+loss_Gmain_)
             with torch.autograd.profiler.record_function('Gmain_backward'):
-                # loss_Gmain.mean().mul(gain).backward()
-                # loss_Gmain_.mean().mul(gain).backward()
                 (loss_Gmain+loss_Gmain_).mean().mul(gain).backward()
-                # loss_Gmain_.mean().mul(gain).backward()
 
         # Gpl: Apply path length regularization.
         if do_Gpl:
@@ -741,12 +472,6 @@ class StyleGAN2Loss(Loss):
                 batch_size = gen_z.shape[0] // self.pl_batch_shrink
                 gen_img_ldr, gen_img_hdr, gen_ws, img = self.run_G(gen_z[:batch_size], gen_c[:batch_size], sync=sync)
                 pl_noise = torch.randn_like(img) / np.sqrt(img.shape[2] * img.shape[3])
-                # print('gen_img:',gen_img.shape)
-                # print('pl_noise:',pl_noise.shape)
-                # print('gen_ws:',gen_ws.shape)
-                # print('gen_c:',gen_c)
-                # if len(gen_ws.shape)==2:
-                #     gen_ws = gen_ws.view(gen_ws.size(0),-1,gen_ws.size(1))
 
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients():
                     # pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
@@ -780,8 +505,6 @@ class StyleGAN2Loss(Loss):
                 # loss_Dgen_ = torch.nn.functional.softplus(gen_logits_) # -log(1 - sigmoid(gen_logits))
             with torch.autograd.profiler.record_function('Dgen_backward'):
                 loss_Dgen.mean().mul(gain).backward()
-                # loss_Dgen_.mean().mul(gain).backward()
-                # (0*loss_Dgen+loss_Dgen_).mean().mul(gain).backward()
 
         # Dmain: Minimize logits for generated images.
         loss_Dgen_ = 0
@@ -820,7 +543,6 @@ class StyleGAN2Loss(Loss):
                     training_stats.report('Loss/D/loss', loss_Dgen + loss_Dreal)
 
                 loss_Dr1 = 0
-                # loss_Dr1_ = 0
                 if do_Dr1:
                     with torch.autograd.profiler.record_function('r1_grads'), conv2d_gradfix.no_weight_gradients():
                         r1_grads = torch.autograd.grad(outputs=[real_logits.sum()], inputs=[real_img_tmp], create_graph=True, only_inputs=True)[0]
@@ -834,9 +556,6 @@ class StyleGAN2Loss(Loss):
 
             with torch.autograd.profiler.record_function(name + '_backward'):
                 (real_logits * 0 + loss_Dreal + loss_Dr1).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + loss_Dreal + loss_Dreal_+loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + 0*loss_Dreal + loss_Dreal_+0*loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-
 
         # Dmain: Maximize logits for real images.
         # Dr1: Apply R1 regularization.
@@ -870,12 +589,7 @@ class StyleGAN2Loss(Loss):
                     training_stats.report('Loss/D/reg_', loss_Dr1_)
 
             with torch.autograd.profiler.record_function(name + '_backward_'):
-                # (real_logits * 0 + loss_Dreal + loss_Dr1).mean().mul(gain).backward()
                 (real_logits_ * 0 + loss_Dreal_ + loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + loss_Dreal + loss_Dreal_+loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + 0*loss_Dreal + loss_Dreal_+0*loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-
-
 
     # could be wrong, self.run_G returns hdr, ldr---> modifed into ldr, hdr, not sure if the order is changed 
     def accumulate_gradients_ldr_only(self, phase, real_img, real_c, gen_z, gen_c, sync, gain):
@@ -897,13 +611,10 @@ class StyleGAN2Loss(Loss):
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
                 loss_Gmain = torch.nn.functional.softplus(-gen_logits) # -log(sigmoid(gen_logits))
-                # loss_Gmain_ = torch.nn.functional.softplus(-gen_logits_) # -log(sigmoid(gen_logits))
-                # training_stats.report('Loss/G/loss', loss_Gmain+loss_Gmain_)
+
             with torch.autograd.profiler.record_function('Gmain_backward'):
                 loss_Gmain.mean().mul(gain).backward()
-                # loss_Gmain_.mean().mul(gain).backward()
-                # (loss_Gmain+loss_Gmain_).mean().mul(gain).backward()
-                # loss_Gmain_.mean().mul(gain).backward()
+
 
         # Gpl: Apply path length regularization.
         if do_Gpl:
@@ -911,13 +622,6 @@ class StyleGAN2Loss(Loss):
                 batch_size = gen_z.shape[0] // self.pl_batch_shrink
                 gen_img_ldr, gen_img_hdr, gen_ws, img = self.run_G(gen_z[:batch_size], gen_c[:batch_size], sync=sync)
                 pl_noise = torch.randn_like(img) / np.sqrt(img.shape[2] * img.shape[3])
-                # print('gen_img:',gen_img.shape)
-                # print('pl_noise:',pl_noise.shape)
-                # print('gen_ws:',gen_ws.shape)
-                # print('gen_c:',gen_c)
-                # if len(gen_ws.shape)==2:
-                #     gen_ws = gen_ws.view(gen_ws.size(0),-1,gen_ws.size(1))
-
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients():
                     # pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
                     pl_grads = torch.autograd.grad(outputs=[(img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
@@ -950,8 +654,7 @@ class StyleGAN2Loss(Loss):
                 # loss_Dgen_ = torch.nn.functional.softplus(gen_logits_) # -log(1 - sigmoid(gen_logits))
             with torch.autograd.profiler.record_function('Dgen_backward'):
                 loss_Dgen.mean().mul(gain).backward()
-                # loss_Dgen_.mean().mul(gain).backward()
-                # (0*loss_Dgen+loss_Dgen_).mean().mul(gain).backward()
+
 
         # Dmain: Minimize logits for generated images.
         loss_Dgen_ = 0
@@ -1042,22 +745,5 @@ class StyleGAN2Loss(Loss):
                     training_stats.report('Loss/D/reg_', loss_Dr1_)
 
             with torch.autograd.profiler.record_function(name + '_backward_'):
-                # (real_logits * 0 + loss_Dreal + loss_Dr1).mean().mul(gain).backward()
                 (real_logits_ * 0 + loss_Dreal_ + loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + loss_Dreal + loss_Dreal_+loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
-                # (real_logits * 0 +real_logits_ * 0 + 0*loss_Dreal + loss_Dreal_+0*loss_Dr1+loss_Dr1_).mean().mul(gain).backward()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#----------------------------------------------------------------------------

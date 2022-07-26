@@ -93,16 +93,6 @@ class Dataset(torch.utils.data.Dataset):
         if self._xflip[idx]:
             assert image.ndim == 3 # CHW
             image = image[:, :, ::-1]
-        
-            # image =phase_real_img[0][0,:,:,:]
-            # images_np = image.cpu().detach().numpy().transpose(1,2,0)
-            # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-            
-            # images_np = image.transpose(1,2,0)
-            # im_ = Image.fromarray((images_np).astype(np.uint8))
-            # im_.save('AugmentPipe_loop5.png')
-
-
         return image.copy(), self.get_label(idx)
 
     def get_label(self, idx):
@@ -225,161 +215,39 @@ class ImageFolderDataset(Dataset):
 
     def _load_raw_image(self, raw_idx):
         fname = self._image_fnames[raw_idx]
-        use_debug = False
-        if use_debug:
-            import random
-            aa = random.randint(100, 112) 
-            bb = random.randint(200, 210) 
         with self._open_file(fname) as f:
             if pyspng is not None and self._file_ext(fname) == '.png':
                 image = pyspng.load(f.read())
                 print('oh, no! Be carefully!')
-            else:
-                # print('###### not in debug #######')
-                # image = np.array(PIL.Image.open(f))
-
-
-                # good for saved dataset
-                # image = np.array(PIL.Image.open(f))/255.0
-                # image=image*2-1
-
-
-                ####### 
-                # print('###### in debug ####### f:',f)
-                # print('self._open_file(fname):',self._open_file(fname))
-
-                ############## dataset image lo, hi: 0.0 0.3131943  
-                ############## dataset image lo, hi: 0.0 0.06953668
-                ############## dataset image lo, hi: 0.0 0.48852554 
-                ############## dataset image lo, hi: 0.0 0.7242838                                                                                                                                    
-                ############## dataset image lo, hi: 0.0 2.0446138                                         
-                ############## dataset image lo, hi: 0.0 0.53378564
-                ############## dataset image lo, hi: 0.0 0.428466   
-                ############## dataset image lo, hi: 0.0 10.476191  
-                ############## dataset image lo, hi: 0.0 1.3886398  
-                ############## dataset image lo, hi: 0.0 2.7779574  
-                ############## dataset image lo, hi: 0.0 0.9620687  
-                ############## dataset image lo, hi: 0.0 8.228167  
-                
-                # has_hdr = False
-                has_hdr = True
-                remove_back_pixel = False
-                
-                
-                if has_hdr:
-                    e = EnvironmentMap(os.path.join(self._path, fname), 'latlong')
-                    image_hdr = e.data
-                    # print('image:', image)
-                    # lo, hi = image.min(),image.max()
-                    # print('############## dataset image lo, hi:',lo, hi) #
-                    if remove_back_pixel:
-                        if use_debug:
-                            print('######image_hdr shape:',image_hdr.shape)#######image_hdr shape: (128, 256, 3)
-
-                        image_hdr = image_hdr[:107,:,:]
-                        image_hdr = cv2.resize(image_hdr,(256,128))
-
-                    use_new_tonemapping = True
-                    if use_new_tonemapping:
-                        img_ldr_, alpha, image_hdr_ = self.tonemap(image_hdr)
-
-                        # both are processed, suppose this is the output of G.synthsis
-                        img_ldr=img_ldr_*2-1
-
-                        keep_same = True
-                        if keep_same:
-                            image_hdr = image_hdr_*2-1
-
-                        # hdr_clip = True
-                        hdr_clip = False
-                        if hdr_clip:
-                            image_hdr = np.clip(image_hdr-1, 0, 1e8)   # remove ldr
-                        else:
-                            image_hdr = np.clip(image_hdr, -1, 1e8)
-                        
-                        blur = False
-                        if blur:
-                            image_hdr = cv2.GaussianBlur(image_hdr, (21, 21), cv2.BORDER_DEFAULT)
-                            img_ldr = np.clip(image_hdr,-1,1)
-                            image_hdr = np.clip(image_hdr,-1,10)
-
-                            # old
-                            # image_ldr_part = np.clip(image_hdr, -1, 1)
-                            # image_hdr_part = np.clip(image_hdr - image_ldr_part, 0, 10-1)
-                            # image_hdr = image_ldr_part + cv2.GaussianBlur(image_hdr_part, (21, 21), cv2.BORDER_DEFAULT)
-
-
-                        # only process hdr
-                        double_tonemap = False
-                        if double_tonemap:
-                            image_hdr_ = (image_hdr_+1)/2
-                            image_hdr = np.clip(image_hdr_**(1/2.4)-1, -1, 100)      
-                            # image_hdr = np.clip(image_hdr**(1/2.4), -1, 100)      
-                            # image_hdr = image_hdr**(1/2.4)     
-                        # else:
-                        #     image_hdr = np.clip(image_hdr_,-1,100)
-
-                        image = np.concatenate((img_ldr, image_hdr), axis=2)
-                        # image = np.concatenate((img_ldr, image_hdr_), axis=2)
-
-                    else:
-                        # comment
-                        gamma=2.4
-                        image = np.clip(image_hdr,1e-10,1e8)
-
-                        is_single_crop = False
-                        if is_single_crop:
-                            image = torch.power(image, 1 / gamma)*5.0#*255c  ######
-                            image = torch.clip(image,0,1)
-                        else:
-                            level = [0.01,0.02,0.04]
-                            aa = torch.clip(torch.pow(image/level[0], 1/gamma), 0, 1)
-                            bb = torch.clip(torch.pow(image/level[1], 1/gamma), 0, 1)
-                            cc = torch.clip(torch.pow(image/level[2], 1/gamma), 0, 1)
-                            image = (aa+bb+cc)/3.0
-                        
-                        image=image*2-1
-                        # comment
-
-                        image = np.concatenate((image, image_hdr), axis=2)
-                
+            else: 
+                e = EnvironmentMap(os.path.join(self._path, fname), 'latlong')
+                image_hdr = e.data
+                use_new_tonemapping = True
+                if use_new_tonemapping:
+                    img_ldr_, alpha, image_hdr_ = self.tonemap(image_hdr)
+                    # both are processed, suppose this is the output of G.synthsis
+                    img_ldr=img_ldr_*2-1
+                    image_hdr = image_hdr_*2-1
+                    image_hdr = np.clip(image_hdr, -1, 1e8)    
+                    image = np.concatenate((img_ldr, image_hdr), axis=2)
                 else:
-                    image = np.array(PIL.Image.open(f))/127.5-1
-                    image = np.concatenate((image, image), axis=2)
-                    # print('image:', image)
+                    gamma=2.4
+                    image = np.clip(image_hdr,1e-10,1e8)
 
-
-                # gamma = 2.4
-                # image = torch.from_numpy(image)
-                # image = torch.clip(image,1e-10,1e8)
-                # # img = torch.sigmoid(img)
-                # image = torch.pow(image, 1 / gamma)*5.0
-                # # img = torch.clip(img,0,1)
-                # image = torch.clip(img,0,1)*2-1
-
-                # image = image.numpy()
-
-
-                # gamma = 2.4
-                # image = torch.from_numpy(image)
-                # image = torch.clip(image,1e-10,1e8)
-                # image = image.numpy()
-                # # img = torch.sigmoid(img)
-                # # image = torch.pow(image, 1 / gamma)*5.0
-                # image = np.power(image, 1 / gamma)*5.0#*255
-
-                # # img = torch.clip(img,0,1)
-                # image = torch.from_numpy(image)
-                # image = torch.clip(image,0,1)*2-1
-
-                # image = image.numpy()
-
-                if use_debug:
-                    image_=(image[:,:,:3]+1)/2
-                    im_ = Image.fromarray((image_*255).astype(np.uint8)) 
-                    # import random
+                    is_single_crop = False
+                    if is_single_crop:
+                        image = torch.power(image, 1 / gamma)*5.0#*255c  ######
+                        image = torch.clip(image,0,1)
+                    else:
+                        level = [0.01,0.02,0.04]
+                        aa = torch.clip(torch.pow(image/level[0], 1/gamma), 0, 1)
+                        bb = torch.clip(torch.pow(image/level[1], 1/gamma), 0, 1)
+                        cc = torch.clip(torch.pow(image/level[2], 1/gamma), 0, 1)
+                        image = (aa+bb+cc)/3.0
                     
-                    im_.save(f'debug_{aa}_prefix_{bb}_AugmentPipe_xxx_yyy_zzz_data.png')
+                    image=image*2-1
+                    image = np.concatenate((image, image_hdr), axis=2)
+                
 
         if image.ndim == 2:
             image = image[:, :, np.newaxis] # HW => HWC

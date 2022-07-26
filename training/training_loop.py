@@ -67,38 +67,12 @@ def setup_snapshot_image_grid(training_set, random_seed=0):
 
 #----------------------------------------------------------------------------
 
-# def save_image_grid(img, fname, drange, grid_size):
-#     # lo, hi = drange
-#     lo, hi = img.min(),img.max()
-#     img = np.asarray(img, dtype=np.float32)
-#     img = (img - lo) * (255 / (hi - lo))
-#     img = np.rint(img).clip(0, 255).astype(np.uint8)
-
-#     gw, gh = grid_size
-#     _N, C, H, W = img.shape
-#     # print('img shape:', _N, C, H, W)
-#     img = img.reshape(gh, gw, C, H, W)
-#     img = img.transpose(0, 3, 1, 4, 2)
-#     img = img.reshape(gh * H, gw * W, C)
-
-#     assert C in [1, 3]
-#     if C == 1:
-#         PIL.Image.fromarray(img[:, :, 0], 'L').save(fname)
-#     if C == 3:
-#         PIL.Image.fromarray(img, 'RGB').save(fname)
-
 from skylibs.hdrio import imsave
 def save_image_grid(img, fname, drange, grid_size):
     lo, hi = drange
     lo, hi = img.min(),img.max()
-    print('xxxxx  lo, hi:',lo, hi)            #xxxxx  lo, hi: 0.0 176.77264, xxxxx  lo, hi: -27.019196 19.66632, -23.51874 9.218349
-    
-    # xxxxx  fname: ./training-runs-paper512-cyclic-new-training-128x256/00145--mirror-image128-noaug/fakes_init.png
-    # print('xxxxx  fname:', fname)            #xxxxx  lo, hi: 0.0 176.77264, xxxxx  lo, hi: -27.019196 19.66632, -23.51874 9.218349
+    print('min and max values of dynamic ranges:',lo, hi) 
     img = np.asarray(img, dtype=np.float32)
-
-
-
     # img = (img - lo) * (1.0 / (hi - lo))
     use_new_tonemap = False
     if use_new_tonemap:
@@ -107,16 +81,6 @@ def save_image_grid(img, fname, drange, grid_size):
         img,_,_ = tonemap(img)
     
     img = (img+1)/2   # comment this line for hdr, or uncomment it for ldr
-
-    # img = (img - lo) * (1.0 / (hi - lo))
-    # gamma = 2.4
-    # img = np.clip(img, 0, 1)
-    # img = np.clip(img, 1e-10,1e8)
-    # img = 1.0/(1+np.exp(-img))
-
-    # img = np.power(img, 1 / gamma)*5.0
-
-    # img = np.rint(img).clip(0, 255).astype(np.uint8)
     img = np.clip(img*255, 0, 255).astype(np.uint8)
 
     gw, gh = grid_size
@@ -125,25 +89,16 @@ def save_image_grid(img, fname, drange, grid_size):
     img = img.reshape(gh, gw, C, H, W)
     img = img.transpose(0, 3, 1, 4, 2)
     img = img.reshape(gh * H, gw * W, C)
-
-    print('##### C:', C)
     assert C in [1, 3]
-
     if C == 1:
         PIL.Image.fromarray(img[:, :, 0], 'L').save(fname)
-        # imsave(fname, img[:, :, 0])
     if C == 3:
         PIL.Image.fromarray(img, 'RGB').save(fname)
-        # imsave(fname, img)
-
 
 def save_image_grid_hdr(img, fname, drange, grid_size):
     lo, hi = drange
     lo, hi = img.min(),img.max()
-    print('xxxxx  lo, hi:',lo, hi)            #xxxxx  lo, hi: 0.0 176.77264, xxxxx  lo, hi: -27.019196 19.66632, -23.51874 9.218349
-    
-    # xxxxx  fname: ./training-runs-paper512-cyclic-new-training-128x256/00145--mirror-image128-noaug/fakes_init.png
-    # print('xxxxx  fname:', fname)            #xxxxx  lo, hi: 0.0 176.77264, xxxxx  lo, hi: -27.019196 19.66632, -23.51874 9.218349
+    print('min and max values of dynamic ranges:',lo, hi) 
     img = np.asarray(img, dtype=np.float32)
 
     gamma = 2.4
@@ -162,8 +117,6 @@ def save_image_grid_hdr(img, fname, drange, grid_size):
             img = (img+1)/2        
             # img = img+1
 
-
-
     if not hdr_clip:
         # img = np.rint(img).clip(0, 255).astype(np.uint8)
         img = np.clip(img*255, 0, 255).astype(np.uint8)
@@ -174,8 +127,6 @@ def save_image_grid_hdr(img, fname, drange, grid_size):
     img = img.reshape(gh, gw, C, H, W)
     img = img.transpose(0, 3, 1, 4, 2)
     img = img.reshape(gh * H, gw * W, C)
-
-    print('##### C:', C)
     assert C in [1, 3]
     if hdr_clip:
         if C == 1:
@@ -189,9 +140,6 @@ def save_image_grid_hdr(img, fname, drange, grid_size):
         if C == 3:
             PIL.Image.fromarray(img, 'RGB').save(fname)
             # imsave(fname, img)
-
-
-
 
 
 #----------------------------------------------------------------------------
@@ -241,8 +189,7 @@ def training_loop(
     torch.backends.cudnn.allow_tf32 = allow_tf32        # Allow PyTorch to internally use tf32 for convolutions
     conv2d_gradfix.enabled = True                       # Improves training speed.
     grid_sample_gradfix.enabled = True                  # Avoids errors with the augmentation pipe.
-    has_positional_coding = False
-    # has_positional_coding = True
+
 
 
     # hdr_only=True
@@ -267,21 +214,7 @@ def training_loop(
     if rank == 0:
         print('Constructing networks...')
     common_kwargs = dict(c_dim=training_set.label_dim, img_resolution=training_set.resolution, img_channels=3)
-    # common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=128, img_channels=3, rank=rank)
-    
-    # common_kwargs = dict(c_dim=training_set.label_dim, img_resolution=training_set.resolution, img_channels=training_set.num_channels)
-    # common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=128, img_channels=training_set.num_channels, rank=rank)
-
-    # common_kwargs_G = dict(c_dim=6, img_resolution=64, img_channels=training_set.num_channels, rank=rank)
-    # common_kwargs_G = dict(c_dim=6, img_resolution=32, img_channels=3, rank=rank)
-    if has_positional_coding:
-        # common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=32, img_channels=3, rank=rank)
-        common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=64, img_channels=3, rank=rank)
-    else:
-        # common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=128, img_channels=3, rank=rank)
-        common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=256, img_channels=3, rank=rank)
-    
-    # common_kwargs_G = dict(c_dim=6, img_resolution=16, img_channels=training_set.num_channels, rank=rank)
+    common_kwargs_G = dict(c_dim=training_set.label_dim, img_resolution=256, img_channels=3, rank=rank)
     G = dnnlib.util.construct_class_by_name(**G_kwargs, **common_kwargs_G).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
     D = dnnlib.util.construct_class_by_name(**D_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
     D_ = dnnlib.util.construct_class_by_name(**D_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
@@ -299,8 +232,6 @@ def training_loop(
     if rank == 0:
         z = torch.empty([batch_gpu, G.z_dim], device=device)
         c = torch.empty([batch_gpu, G.c_dim], device=device)
-        # img = misc.print_module_summary(G, [z, c])
-        # misc.print_module_summary(D, [img, c])
 
     # Setup augmentation.
     if rank == 0:
@@ -328,12 +259,9 @@ def training_loop(
     # Setup training phases.
     if rank == 0:
         print('Setting up training phases...')
-    # print('ddp_modules:',ddp_modules)
-    # print('loss_kwargs:',loss_kwargs)
     loss = dnnlib.util.construct_class_by_name(device=device, **ddp_modules, **loss_kwargs) # subclass of training.loss.Loss
-    # hdr_or_ldr = 'ldr'
     hdr_or_ldr = 'ldr_hdr'
-    #hdr_or_ldr = 'hdr'
+
     if hdr_or_ldr == 'ldr':
         phase_list = [('G', G, G_opt_kwargs, G_reg_interval), ('D', D, D_opt_kwargs, D_reg_interval)]
     elif hdr_or_ldr == 'hdr':
@@ -370,9 +298,6 @@ def training_loop(
     if rank == 0:
         print('Exporting sample images...')
         grid_size, images, labels = setup_snapshot_image_grid(training_set=training_set)
-        # save_image_grid(images, os.path.join(run_dir, 'reals.png'), drange=[0,255], grid_size=grid_size)
-        # save_image_grid(images, os.path.join(run_dir, 'reals.png'), drange=[0,1], grid_size=grid_size)
-        # save_image_grid(images, os.path.join(run_dir, 'reals.png'), drange=[-1,1], grid_size=grid_size)
         grid_z = torch.randn([labels.shape[0], G.z_dim], device=device).split(batch_gpu)
         grid_c = torch.from_numpy(labels).to(device).split(batch_gpu)
         images = torch.cat([G_ema(z=z, c=c, noise_mode='const').cpu() for z, c in zip(grid_z, grid_c)]).numpy()
@@ -407,51 +332,11 @@ def training_loop(
     if progress_fn is not None:
         progress_fn(0, total_kimg)
     while True:
-
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_img, phase_real_c = next(training_set_iterator)
             # phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
-            # if rank==0:
-                # phase_real_img low and high: tensor(0.) tensor(2.4549)
-                # phase_real_img low and high: tensor(0.) tensor(12.1672)
-                # phase_real_img low and high: tensor(0.) tensor(1.0869)
-                # phase_real_img low and high: tensor(0.) tensor(3.4049)
-                # phase_real_img low and high: tensor(0.) tensor(1.7711)
-                # phase_real_img low and high: tensor(0.) tensor(35.5022)
-                # phase_real_img low and high: tensor(0.) tensor(1.0586)
-                # phase_real_img low and high: tensor(0.) tensor(5.5092)
-                # phase_real_img low and high: tensor(0.) tensor(17.3308)
-                # phase_real_img low and high: tensor(0.) tensor(3.3906)
-                # phase_real_img low and high: tensor(0.) tensor(118.1277)
-                # phase_real_img low and high: tensor(0.) tensor(50.4088)
-                # phase_real_img low and high: tensor(0.) tensor(99.7573)
-                # phase_real_img low and high: tensor(0.) tensor(130.0713)
-                # phase_real_img low and high: tensor(0.) tensor(19.7233)
-                # phase_real_img low and high: tensor(0.) tensor(42.7367)
-                # phase_real_img low and high: tensor(0.) tensor(2.4805)
-                # phase_real_img low and high: tensor(0.) tensor(10.4050)
-                # phase_real_img low and high: tensor(0.) tensor(6.1462)
-                # phase_real_img low and high: tensor(0.) tensor(1.9451)
-                # phase_real_img low and high: tensor(0.) tensor(12.0744)
-                # phase_real_img low and high: tensor(0.) tensor(30.2988)
-                # phase_real_img low and high: tensor(0.) tensor(5.7922)
-                # phase_real_img low and high: tensor(0.) tensor(3.7065)
-                # phase_real_img low and high: tensor(0.) tensor(2.9209)
-                # phase_real_img low and high: tensor(0.) tensor(16.4422)
-                # phase_real_img low and high: tensor(0.) tensor(1.1964)                
-                # print('------   phase_real_img low and high:', phase_real_img.min(),phase_real_img.max())
-                # print('##$@@@    phase_real_img size:', phase_real_img.size())
             phase_real_img = (phase_real_img.to(device).to(torch.float32)).split(batch_gpu)
-
-
-            # print('phase_real_img:',type(phase_real_img))
-            # image =phase_real_img[0][0,:,:,:]
-            # images_np = image.cpu().detach().numpy().transpose(1,2,0)
-            # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-            # im_ = Image.fromarray((images_np).astype(np.uint8))
-            # im_.save('AugmentPipe_loop2.png')
-
             phase_real_c = phase_real_c.to(device).split(batch_gpu)
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
             all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
@@ -474,17 +359,7 @@ def training_loop(
             for round_idx, (real_img, real_c, gen_z, gen_c) in enumerate(zip(phase_real_img, phase_real_c, phase_gen_z, phase_gen_c)):
                 sync = (round_idx == batch_size // (batch_gpu * num_gpus) - 1)
                 gain = phase.interval
-
-                # h_v, l_w = real_img.max(), real_img.min()
-                # print('real_img h_v, l_w:',h_v, l_w)
-
-                # image =real_img[0,:,:,:]
-                # images_np = image.cpu().detach().numpy().transpose(1,2,0)
-                # images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-                # im_ = Image.fromarray((images_np).astype(np.uint8))
-
-                # num = random.randint(0, 100)
-                # im_.save('AugmentPipe_loop_'+str(num)+'.png')                
+               
                 if hdr_or_ldr=='ldr':
                     loss.accumulate_gradients_ldr_only(phase=phase.name, real_img=real_img, real_c=real_c, gen_z=gen_z, gen_c=gen_c, sync=sync, gain=gain)
                 elif hdr_or_ldr=='hdr':

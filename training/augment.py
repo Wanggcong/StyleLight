@@ -439,30 +439,13 @@ class AugmentPipe(torch.nn.Module):
             mask_y = (((coord_y + 0.5) / height - center[:, 1]).abs() >= size[:, 1] / 2)
             mask = torch.logical_or(mask_x, mask_y).to(torch.float32)
             images = images * mask
-            # print('################################# in cutout')
 
         ######################################################
         # print('images:',images.shape) # 8,3,512,512
         if self.cyclic > 0:
-        #     batch_size, num_channels, height, width = images.shape
             if isRealImage:
                 random_index = np.random.randint(width)
                 images = torch.cat((images[:,:,:,random_index:],images[:,:,:,:random_index]), dim=3)
-        #     else:
-        #         images = torch.cat((images[:,:,:,width//2:],images[:,:,:,:width//2]), dim=3)
-
-            # num = random.randint(0, 100000)
-            # if num%1000==0:
-            #     image =images[0,:,:,:]
-            #     images_np = image.cpu().detach().numpy().transpose(1,2,0)
-            #     images_np = np.clip((images_np+1)*0.5*255, 0, 255)
-            #     im_ = Image.fromarray((images_np).astype(np.uint8))
-            #     # im_.save('AugmentPipe.png')
-            #     # num = random.randint(0, 100)
-            #     if isRealImage:
-            #         im_.save('AugmentPipe_loop_real_'+str(num)+'.png')
-            #     else:
-            #         im_.save('AugmentPipe_loop_fake_'+str(num)+'.png')
 
         return images
 
