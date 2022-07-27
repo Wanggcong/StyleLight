@@ -7,8 +7,8 @@ from skylibs.hdrio import imread, imsave
 from training.tonemapping import TonemapHDR
 
 
-pano_h=128
-pano_w=256
+pano_h=256
+pano_w=512
 
 def pre_process_data(src_file, to_folder, phase, file_txt):
     dst_folder = os.path.join(to_folder, phase)
@@ -51,7 +51,7 @@ def pre_process_data(src_file, to_folder, phase, file_txt):
 
 ###########
 to_folder = '/mnt/disks/data/datasets/IndoorHDRDataset2018-debug2-'+str(pano_h)+'x'+str(pano_w)+'-data-splits2/'
-from_file = '/mnt/disks/data/datasets/IndoorHDRDataset2018'
+from_folder = '/mnt/disks/data/datasets/IndoorHDRDataset2018'
 
 train_txt = 'train_org.txt'
 test_txt = 'test_selected.txt'
@@ -61,6 +61,6 @@ if not os.path.exists(to_folder):
     os.mkdir(os.path.join(to_folder, 'train'))
     os.mkdir(os.path.join(to_folder, 'test'))
 
-pre_process_data(from_file, to_folder, 'train', train_txt)  
-pre_process_data(from_file, to_folder, 'test', test_txt)
+pre_process_data(from_folder, to_folder, 'train', train_txt)  
+pre_process_data(from_folder, to_folder, 'test', test_txt)
 
