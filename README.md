@@ -55,7 +55,7 @@ python data_prepare_laval.py
 ```
 ### Train StyleLight
 ```
-python train.py --outdir=./training-runs-paper512-cyclic-new-training-128x256-ws_plus_coor2-accepted --data=/mnt/disks/data/datasets/IndoorHDRDataset2018-128x256-data-splits/train --gpus=8 --cfg=paper256  --mirror=1 --aug=noaug
+python train.py --outdir=./training-runs-256x512 --data=/mnt/disks/data/datasets/IndoorHDRDataset2018-128x256-data-splits/train --gpus=8 --cfg=paper256  --mirror=1 --aug=noaug
 ```
 ### Or Download inference models
 - Please download the inference model from the [goodle driver](http://indoor.hdrdb.com/).
