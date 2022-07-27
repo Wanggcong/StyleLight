@@ -44,10 +44,10 @@ pip install opencv-python
 
 
 ## 3. Training 
-### Download Dataset
+### Download dataset
 - Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
 
-### Pre-process Datasets
+### Pre-process datasets
 - Set the variables *the path to the laval dataset(from_folder)* and *the path to save pre-processed data (to_folder)* in data_prepare_laval.py
 ```
 python data_prepare_laval.py
@@ -62,7 +62,7 @@ python train.py --outdir=./training-runs-256x512 --data=/mnt/disks/data/datasets
 - --cfg is the configure of stylegan-ada
 - --mirror and --aug is data augmentation
 
-### Or Download inference models
+### Or download inference model
 - Please download the inference model from the [goodle driver](https://drive.google.com/file/d/1vHfwrtgk0EjZlS14Ye5lASJ0R4IWl_4w/view?usp=sharing).
 
 
