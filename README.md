@@ -78,7 +78,7 @@ python test_lighting.py
 
 
 
-## 6.Citation
+## 6. Citation
 
 If you find this useful for your research, please cite the our paper.
 
@@ -96,5 +96,5 @@ or
 Guangcong Wang, Yinuo Yang, Chen Change Loy, and Ziwei Liu. StyleLight: HDR Panorama Generation for Lighting Estimation and Editing, ECCV 2022.
 ```
 
-## 7.Acknowledgments
+## 7. Acknowledgments
 This code is based on the [StyleGAN2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch) and [PTI](https://github.com/danielroich/PTI) codebase. 
