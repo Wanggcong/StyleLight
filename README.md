@@ -44,19 +44,25 @@ pip install opencv-python
 
 ### Download pretrained models 
 
-## Training 
 
-### Dataset
-- Laval dataset
-  - Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
+### Download Dataset
+- Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
+
+
+## Training 
+### Data pre-processing
+```
+
+```
 
 
 ## To-Do
-- [x] Example datasets
-- [x] Example Pretrained Models 
+- [x] Training code
+- [x] Inference model
+- [ ] Evaluation code
 - [ ] Update Pretrained Models
 - [ ] Clean Training Code
-- [ ] Training Instructions
+
 
 
 ## Citation
