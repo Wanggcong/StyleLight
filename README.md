@@ -73,8 +73,8 @@ python test_lighting.py
 - [x] Training code
 - [x] Inference model
 - [ ] Evaluation code
-- [ ] Update Pretrained Models
 - [ ] Clean Training Code
+- [ ] Colab Demo
 
 
 
