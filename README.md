@@ -13,13 +13,6 @@
 
  In **European Conference on Computer Vision (ECCV)**, 2022  
 
-### Fast Video-to-Video Translation
-
-<p align='center'>  
-  <img src='imgs/performance.gif' width='90%'/>  
-</p>
-
-### Peformance
 
 <p align='left'>  
   <img src='imgs/metrics.png' width='60%'/>  
@@ -28,22 +21,34 @@
 ## Prerequisites
 - Linux or macOS
 - Python 3
-- NVIDIA GPU + CUDA cuDNN
-- PyTorch >= 1.0
-- ffmpeg toolbox >= 4.0
+- NVIDIA GPU + CUDA cuDNN(10.2)
+- PyTorch >= 1.7
 - OpenCV
 
 ## Getting Started
 
-### Inference Enviroment
+### Enviroment
 We recommend using the virtual environment (conda) to run the code easily.
 
 ```
-conda create -n fvid python=3.7;
-conda activate fvid;
-conda install pytorch==1.7.1 torchvision==0.8.2 cudatoolkit=10.1;
-conda install ffmpeg==4.0.2;
-pip install opencv-python dominate scipy tqdm matplotlib scikit-image;
+conda create -n StyleLight python=3.7 -y
+conda activate StyleLight
+pip install lpips
+pip install wandb
+conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=10.2 -c pytorch
+
+pip install matplotlib
+pip install dlib
+pip install imageio
+pip install einops
+
+sudo apt-get install openexr and libopenexr-dev
+pip install OpenEXR
+
+pip install imageio-ffmpeg
+pip install ninja
+pip install opencv-python
+
 ```
 
 ### Download examples
