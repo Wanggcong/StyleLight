@@ -70,7 +70,8 @@ python train.py --outdir=./training-runs-256x512 --data=/mnt/disks/data/datasets
 
 ## 4. Test 
 ### Lighting estimation and editing
-- Set paths in PTI_utils/hyperparameters.py
+- Set paths (stylegan2_ada_ffhq) in PTI_utils/paths_config.py 
+- Set options (lighting estimation or lighting editing) in PTI_utils/hyperparameters.py
 ```
 python test_lighting.py
 ```
