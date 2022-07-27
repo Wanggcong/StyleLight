@@ -56,32 +56,15 @@ class MyCoach(BaseCoach):
         super().__init__(data_loader, use_wandb)
 
     def train(self):
-
-        # w_path_dir = f'{paths_config.embedding_base_dir}/{paths_config.input_data_id}'
-        # os.makedirs(w_path_dir, exist_ok=True)
-        # os.makedirs(f'{w_path_dir}/{paths_config.pti_results_keyword}', exist_ok=True)
-
         use_ball_holder = True
         is_128x256 = False
 
         # for fname, image in tqdm(self.data_loader):
         for image_name in tqdm(self.data_loader):
-            # image_name = fname[0]
-            if False:
-                # image = xxx
-                tone = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
-                e = EnvironmentMap(image_name, 'latlong')
-                e.resize((128,256))
-                if True:
-                    e.data,_,_ = tone(e.data) 
-                # image = (e.data*255.0).astype(np.uint8) 
-                image = 2*e.data-1
-            else:
-                # env = EnvironmentMap(128, 'latlong')
-                env = EnvironmentMap(256, 'latlong')
-                image_crop2pano = crop2pano(env, image_name)
-                print('image max:', image_crop2pano.max())
-                image = 2*(image_crop2pano/255.0)-1
+            env = EnvironmentMap(256, 'latlong')
+            image_crop2pano = crop2pano(env, image_name)
+            print('image max:', image_crop2pano.max())
+            image = 2*(image_crop2pano/255.0)-1
 
 
             image = torch.tensor(image.transpose([2, 0, 1]), device=global_config.device)#/255.0     ################################### 0-1
@@ -89,12 +72,7 @@ class MyCoach(BaseCoach):
 
 
             self.restart_training()
-
-            # if self.image_counter >= hyperparameters.max_images_to_invert:   # max_images_to_invert=30, self.image_counter = 0
-            #     break
             name = image_name.split('/')[-1].split('.')[0]
-            # embedding_dir = f'{w_path_dir}/{paths_config.pti_results_keyword}/{name}'     ###############
-            # os.makedirs(embedding_dir, exist_ok=True)
 
             # mask_fname = '/home/deep/projects/mini-stylegan2/crop10.jpg'
             # mask_fname = '/home/deep/projects/mini-stylegan2/crop60.jpg'
@@ -121,14 +99,6 @@ class MyCoach(BaseCoach):
 
             col_min = np.argwhere(mask_pil_sum_c_col).min()+10 #256
             col_max = np.argwhere(mask_pil_sum_c_col).max()-10  
-
-
-            # creating new Image object
-            # img = PIL.Image.new("RGB", (w, h))
-  
-            # # create rectangle image
-            # img1 = ImageDraw.Draw(img)  
-            # img1.rectangle(shape, fill ="# ffff33", outline ="red") 
             
             img1 = ImageDraw.Draw(mask_pil) 
             img1.rectangle([(col_min,row_min),(col_max, row_max)],fill=(255, 0, 0), outline ="red") 
@@ -140,18 +110,8 @@ class MyCoach(BaseCoach):
             bbox = [row_min, row_max, col_min, col_max] 
 
             w_pivot = None
-
-            # if hyperparameters.use_last_w_pivots: # use_last_w_pivots = False, false for default
-            #     w_pivot = self.load_inversions(w_path_dir, name)
-
-            # elif not hyperparameters.use_last_w_pivots or w_pivot is None:
-            #     w_pivot = self.calc_inversions(image, name, bbox) ## here
-
             w_pivot = self.calc_inversions(image, name, bbox) ## here
-            # w_pivot = w_pivot.detach().clone().to(global_config.device)
             w_pivot = w_pivot.to(global_config.device)
-
-            # torch.save(w_pivot, f'{embedding_dir}/0.pt')
             log_images_counter = 0
             real_images_batch = image.to(global_config.device)
             real_images_batch = real_images_batch[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]]
@@ -167,11 +127,6 @@ class MyCoach(BaseCoach):
                     PIL.Image.fromarray(generated_images, 'RGB').save(f'{paths_config.checkpoints_dir}/{name}.png')
                 else:
                     gamma = 2.4
-                    # ldr = torch.clip(synth_image, -1, 1)
-                    # hdr = torch.clip(synth_image-1, 0, 1e8)+1
-                    # hdr = torch.clip(synth_image, -1, 1e8)
-                    
-                    # synth_image = synth_image*(1-mask)+(target_images/127.5-1)*mask
                     hdr = torch.clip(generated_images, -1, 1)
                     full = (hdr+1)/2
                     tone = True
@@ -222,8 +177,6 @@ class MyCoach(BaseCoach):
 
             self.image_counter += 1
 
-            # torch.save(self.G, f'{paths_config.checkpoints_dir}/model_{global_config.run_name}_{image_name}.pt')
-            
             generated_images = self.forward(w_pivot)
             is_png = False # in rebuttal, we use False
             if is_png:
@@ -232,28 +185,13 @@ class MyCoach(BaseCoach):
                 PIL.Image.fromarray(generated_images, 'RGB').save(f'{paths_config.checkpoints_dir}/{name}_test.png')
             else:
                 gamma = 2.4
-                # ldr = torch.clip(synth_image, -1, 1)
-                # hdr = torch.clip(synth_image-1, 0, 1e8)+1
-                # hdr = torch.clip(synth_image, -1, 1e8)
-                
-                # synth_image = synth_image*(1-mask)+(target_images/127.5-1)*mask
-
                 limited = True
 
                 if limited:
-                    # generated_images_singlemap = torch.mean(generated_images, dim=1, keepdim=True)
-                    # r_percentile = torch.quantile(generated_images_singlemap, 0.99)
-                    # light_mask = (generated_images_singlemap > r_percentile)*1.0                    
-                    # hdr = torch.clip(generated_images*(1-light_mask), -1, 1)+torch.clip(generated_images*light_mask, -1, 10)
-        
                     generated_images_singlemap = torch.mean(generated_images, dim=1, keepdim=True)                                                                             
                     r_percentile = torch.quantile(generated_images_singlemap,0.999)                                                                                     
-                    light_mask = (generated_images_singlemap > r_percentile)*1.0                                                                                 
-                    # xx = np.power(1.0/5, 2.4)                                                                                                                      
-                    # xx2 = np.power(2.0/5, 2.4)                                                                                                                   
-                    # e.data = np.clip(e.data*(1-light_mask), 0, xx)+np.clip(e.data*light_mask, 0, xx2)   
+                    light_mask = (generated_images_singlemap > r_percentile)*1.0                                                                                    
                     hdr = torch.clip(generated_images*(1-light_mask), -1, 1)+torch.clip(generated_images*light_mask, -1, 2)             
-
 
                 else:
                     hdr = torch.clip(generated_images, -1, 1)
@@ -269,21 +207,14 @@ class MyCoach(BaseCoach):
 
                 imsave(f'{paths_config.checkpoints_dir}/{name}_test.exr', img_hdr_np)
 
-
-            # torch.save(self.G, f'{paths_config.checkpoints_dir}/{name}.pt')
-
             # save video
             if do_save_image:
                 sequence_path=f'{paths_config.save_image_path}/*.png' 
-                # sequences = sorted(glob.glob(f'{sequence_path}'))[::3]
                 sequences = sorted(glob.glob(f'{sequence_path}'))[150:]
                 video_name=paths_config.save_video_path
                 video = imageio.get_writer(f'{video_name}', mode='I', fps=25, codec='libx264', bitrate='16M')
-                # img_fov = imageio.imread(filename) 
                 for filename in sequences: 
                     img = imageio.imread(filename) 
-                    # height, width, layers = img.shape
-                    # size = (width,height)
                     img_cat = np.concatenate([image_crop2pano, img], axis=1)      #img size (256, 512, 3)
                     video.append_data(img_cat) 
 

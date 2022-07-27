@@ -63,10 +63,6 @@ def xml2csv(file_whole_name):
     #  to normalize the bounding boxes
     size = root.find("size")
     width, height = float(size.find("width").text), float(size.find("height").text)
-    # print('width, height:',width, height) #width, height: 512.0 256.0
-
-    # ['light', 0.08984375, 0.234375, '', '', 0.2421875, 0.44140625, '', '', 'light', 0.576171875, 0.44140625, '', '', 0.623046875, 0.50390625, '', '', 'no_ligh
-    # t', 0.337890625, 0.0703125, '', '', 0.419921875, 0.13671875, '', '']
 
     # Find all the bounding objects
     temp_csv=[]
@@ -81,7 +77,7 @@ def xml2csv(file_whole_name):
         # Add the upper left coordinate
         x_min = float(bounding_box.find("xmin").text) #/ width
         y_min = float(bounding_box.find("ymin").text) #/ height
-        # temp_csv.extend([x_min, y_min])
+
         # Add the lower right coordinate
         x_max = float(bounding_box.find("xmax").text) #/ width
         y_max = float(bounding_box.find("ymax").text) #/ height
@@ -98,11 +94,6 @@ class MyEditor(BaseEditor):
         super().__init__(data_loader, use_wandb)
 
     def train(self):
-
-        # w_path_dir = f'{paths_config.embedding_base_dir}/{paths_config.input_data_id}'
-        # os.makedirs(w_path_dir, exist_ok=True)
-        # os.makedirs(f'{w_path_dir}/{paths_config.pti_results_keyword}', exist_ok=True)
-
         use_ball_holder = True
         is_128x256 = False
 
@@ -110,29 +101,9 @@ class MyEditor(BaseEditor):
         for image_name in tqdm(self.data_loader):
             # image_name = fname[0]
             print('image_name:',image_name)
-            if False:
-                # image = xxx
-                tone = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
-                e = EnvironmentMap(image_name, 'latlong')
-                e.resize((256,512))
-                if True:
-                    e.data,_,_ = tone(e.data) 
-                # image = (e.data*255.0).astype(np.uint8) 
-                image = 2*e.data-1
-            
-            elif True:
-                image = PIL.Image.open(image_name).convert('RGB')
-                image = np.array(image)/127.5-1
+            image = PIL.Image.open(image_name).convert('RGB')
+            image = np.array(image)/127.5-1
 
-            else:
-                # env = EnvironmentMap(128, 'latlong')
-                env = EnvironmentMap(256, 'latlong')
-                image_crop2pano = crop2pano(env, image_name)
-                print('image max:', image_crop2pano.max())
-                image = 2*(image_crop2pano/255.0)-1
-            
-            # import pdb
-            # pdb.set_trace()
             xml_path = image_name.split('.')[0]+'.xml'
 
             # example: [('light', [46.0, 60.0, 124.0, 113.0]), ('non_light', [173.0, 18.0, 215.0, 35.0])]
@@ -144,68 +115,18 @@ class MyEditor(BaseEditor):
 
 
             self.restart_training()
-
-            # if self.image_counter >= hyperparameters.max_images_to_invert:   # max_images_to_invert=30, self.image_counter = 0
-            #     break
             name = image_name.split('/')[-1].split('.')[0]
-            # embedding_dir = f'{w_path_dir}/{paths_config.pti_results_keyword}/{name}'     ###############
-            # os.makedirs(embedding_dir, exist_ok=True)
-
 
             w_pivot = None
-
-            # if hyperparameters.use_last_w_pivots: # use_last_w_pivots = False, false for default
-            #     w_pivot = self.load_inversions(w_path_dir, name)
-
-            # elif not hyperparameters.use_last_w_pivots or w_pivot is None:
-            #     # w_pivot = self.calc_inversions(image, name, bbox) ## here
-            #     w_pivot = self.calc_inversions(image, name) ## here
-            
             w_pivot = self.calc_inversions(image, name) ## here
-            # w_pivot = w_pivot.detach().clone().to(global_config.device)
             w_pivot = w_pivot.to(global_config.device)
 
-            # torch.save(w_pivot, f'{embedding_dir}/0.pt')
             log_images_counter = 0
             real_images_batch = image.to(global_config.device)
-            # real_images_batch = real_images_batch[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]]
-            
-            use_first_phase = False
-            if use_first_phase:
-                generated_images = self.forward(w_pivot)
-                is_png = True
-                if is_png:
-                    generated_images = torch.clip(generated_images, -1, 1)
-                    generated_images = (generated_images + 1) * (255/2)
-                    generated_images = generated_images.permute(0, 2, 3, 1).clamp(0, 255).to(torch.uint8)[0].cpu().numpy()
-                    PIL.Image.fromarray(generated_images, 'RGB').save(f'{paths_config.checkpoints_dir}/{name}.png')
-                else:
-                    gamma = 2.4
-                    # ldr = torch.clip(synth_image, -1, 1)
-                    # hdr = torch.clip(synth_image-1, 0, 1e8)+1
-                    # hdr = torch.clip(synth_image, -1, 1e8)
-                    
-                    # synth_image = synth_image*(1-mask)+(target_images/127.5-1)*mask
-                    hdr = torch.clip(generated_images, -1, 1)
-                    full = (hdr+1)/2
-                    tone = True
-                    if tone:
-                        full_inv_tonemap = torch.pow(full/5, gamma)
-                        img_hdr_np = full_inv_tonemap.permute(0, 2, 3, 1)[0].detach().cpu().numpy() 
-                    else:
-                        img_hdr_np = full.permute(0, 2, 3, 1)[0].cpu().numpy()
-
-
-                    imsave(f'{paths_config.checkpoints_dir}/{name}_test.exr', img_hdr_np)
-
-            
-            
+                        
             for i in tqdm(range(hyperparameters.max_pti_steps)):   #max_pti_steps = 350
-            # for i in tqdm(range(900)):   #max_pti_steps = 350
                 generated_images = self.forward(w_pivot)
                 generated_images = torch.clip(generated_images, -1, 1)                     ######
-
-                # generated_images = generated_images[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]]
                 combined_edit = False
                 if combined_edit:
                     loss, l2_loss_val, loss_lpips, mask = self.calc_loss_new(generated_images, real_images_batch, name,
@@ -312,9 +233,6 @@ class MyEditor(BaseEditor):
                         optimizer.step()
 
 
-
-
-                
             # torch.save(self.G, f'{paths_config.checkpoints_dir}/model_{global_config.run_name}_{image_name}.pt')
             ####################################################################################################
             
@@ -326,11 +244,6 @@ class MyEditor(BaseEditor):
                 PIL.Image.fromarray(generated_images, 'RGB').save(f'{paths_config.checkpoints_dir}/{name}_test.png')
             else:
                 gamma = 2.4
-                # ldr = torch.clip(synth_image, -1, 1)
-                # hdr = torch.clip(synth_image-1, 0, 1e8)+1
-                # hdr = torch.clip(synth_image, -1, 1e8)
-                
-                # synth_image = synth_image*(1-mask)+(target_images/127.5-1)*mask
                 hdr = torch.clip(generated_images, -1, 1)
                 full = (hdr+1)/2
                 tone = False
@@ -344,10 +257,6 @@ class MyEditor(BaseEditor):
                 imsave(f'{paths_config.checkpoints_dir}/{name}_test.exr', img_hdr_np)
 
 
-            # torch.save(self.G, f'{paths_config.checkpoints_dir}/{name}.pt')
-
-
-
             # save video
             if do_save_image:
                 sequence_path=f'{paths_config.save_image_path}/*.png' 
@@ -358,10 +267,6 @@ class MyEditor(BaseEditor):
                 # img_fov = imageio.imread(filename) 
                 for filename in sequences: 
                     img = imageio.imread(filename) 
-                    # height, width, layers = img.shape
-                    # size = (width,height)
-                    # img_cat = np.concatenate([image_crop2pano, img], axis=1)      #img size (256, 512, 3)
-                    # img_cat = np.concatenate([image_crop2pano, img], axis=1)      #img size (256, 512, 3)
                     video.append_data(img) 
 
                 video.close()

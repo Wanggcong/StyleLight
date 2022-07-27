@@ -89,7 +89,6 @@ def project(
         buf.requires_grad = True
 
     for step in tqdm(range(num_steps)):
-
         # Learning rate schedule.
         t = step / num_steps
         w_noise_scale = w_std * initial_noise_factor * max(0.0, 1.0 - t / noise_ramp_length) ** 2
@@ -125,8 +124,6 @@ def project(
         dist = (target_features - synth_features).square().sum()
 
         percentile = 0.9
-        # import pdb
-        # pdb.set_trace()
         target_images_singlemap = torch.mean(target_images, dim=1, keepdim=True)
         r_percentile = torch.quantile(target_images_singlemap, percentile)
         light_mask = (target_images_singlemap > r_percentile)*1.0
@@ -268,24 +265,6 @@ def edit(
         synth_features = vgg16(synth_images, resize_images=False, return_lpips=True)         #############
         
         dist = (target_features - synth_features).square().sum()
-
-        # percentile = 0.9
-        # import pdb
-        # pdb.set_trace()
-        # target_images_singlemap = torch.mean(target_images, dim=1, keepdim=True)
-        # r_percentile = torch.quantile(target_images_singlemap, percentile)
-        # light_mask = (target_images_singlemap > r_percentile)*1.0
-        # l2_loss_val = l2_loss.l2_loss(target_images, synth_images)+10*l2_loss.l2_loss(target_images*light_mask, synth_images*light_mask)
-        # l2_loss_val = l2_loss.l2_loss(target_images*(1-light_mask), synth_images*(1-light_mask))+torch.mean(torch.abs(synth_images*light_mask))#10*l2_loss.l2_loss(target_images*light_mask, synth_images*light_mask)
-        # if bbox is not None:
-        #     mask = torch.zeros_like(generated_images)
-        #     mask[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]] = 1
-        #     mask_pixels = (bbox[1]-bbox[0])*(bbox[3]-bbox[2])
-        #     full_pixels = mask.shape[2]*mask.shape[3]#-mask_pixels
-
-        #     l2_loss_val = l2_loss.l2_loss(generated_images*(1-mask), real_images*(1-mask))*full_pixels/(full_pixels-mask_pixels) #+torch.mean(torch.abs(generated_images*light_mask))#10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-        
-
 
         # Noise regularization.
         reg_loss = 0.0
