@@ -1,0 +1,38 @@
+<annotation>
+	<folder>test_select_256x512png_289</folder>
+	<filename>9C4A0205-437172d8ee.png</filename>
+	<path>/Users/guangcongwang/Google Drive/projects/mini-stylegan2/test_select_256x512png_289/9C4A0205-437172d8ee.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>256</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>light</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>300</xmin>
+			<ymin>102</ymin>
+			<xmax>325</xmax>
+			<ymax>141</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>non_light</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>290</xmin>
+			<ymin>27</ymin>
+			<xmax>312</xmax>
+			<ymax>38</ymax>
+		</bndbox>
+	</object>
+</annotation>
