@@ -39,6 +39,7 @@ regulizer_lpips_lambda = 0.01 # org 0.1
 ################### lighting editing ###########################
 # # for lighting editing
 
+# edit = True
 # pt_l2_lambda = 1
 # pt_lpips_lambda = 1
 # regulizer_l2_lambda = 0.01 #org 0.1

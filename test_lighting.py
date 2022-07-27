@@ -12,6 +12,8 @@ from PTI_utils.ImagesDataset import ImagesDataset
 import glob
 
 
+
+
 def run_PTI(run_name='', use_wandb=False):
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = global_config.cuda_visible_devices
@@ -46,21 +48,14 @@ def run_PTI(run_name='', use_wandb=False):
         # root_path = 'assets/wild2/*jp*g'
         # dataloader = sorted(glob.glob(root_path))
 
-        
-        print('dataloader:',dataloader)
-    else:
-        # root_path = 'test_set_light_editing_new/*195*png'
-        # root_path = 'test_set_light_editing_new/*205*png'
-        # root_path = 'test_set_light_editing_new/*279*png'
-        root_path = 'assets/test_set_light_editing_new/*849*png'
-        # root_path = 'test_set_light_editing_new/*2101*png'
-        dataloader = sorted(glob.glob(root_path))#[:10]
-
-
-    if hyperparameters.edit:
-        coach = MyEditor(dataloader, use_wandb)
-    else:
         coach = MyCoach(dataloader, use_wandb)
+
+    else:
+        # root_path = 'assets/test_set_light_editing_new/*195*png'
+        # root_path = 'assets/test_set_light_editing_new/*205*png'
+        root_path = 'assets/test_set_light_editing_new/*279*png'
+        dataloader = sorted(glob.glob(root_path))#[:10]
+        coach = MyEditor(dataloader, use_wandb)
 
 
     coach.train()
@@ -68,7 +63,7 @@ def run_PTI(run_name='', use_wandb=False):
     return global_config.run_name
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  
     run_PTI(run_name='', use_wandb=False)
 
 

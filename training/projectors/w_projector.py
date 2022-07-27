@@ -130,7 +130,7 @@ def project(
         target_images_singlemap = torch.mean(target_images, dim=1, keepdim=True)
         r_percentile = torch.quantile(target_images_singlemap, percentile)
         light_mask = (target_images_singlemap > r_percentile)*1.0
-        if False: # in rebbutal, we use false
+        if True: # in rebbutal, we use false
             l2_loss_val = l2_loss.l2_loss(target_images, synth_images)+10*l2_loss.l2_loss(target_images*light_mask, synth_images*light_mask)# paper
         else:
             l2_loss_val = l2_loss.l2_loss(target_images, synth_images)#+10*l2_loss.l2_loss(target_images*light_mask, synth_images*light_mask)

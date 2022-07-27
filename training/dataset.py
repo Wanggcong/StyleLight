@@ -20,8 +20,9 @@ try:
 except ImportError:
     pyspng = None
 
-from envmap import EnvironmentMap
-from . import tonemapping #import TonemapHDR
+from skylibs.envmap import EnvironmentMap
+# from . import tonemapping #import TonemapHDR
+from training.tonemapping import TonemapHDR
 #----------------------------------------------------------------------------
 
 class Dataset(torch.utils.data.Dataset):
@@ -162,8 +163,8 @@ class ImageFolderDataset(Dataset):
     ):
         self._path = path
         self._zipfile = None
-        self.tonemap = tonemapping.TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
-        # self.tonemap = tonemapping.TonemapHDR(gamma=2.4, percentile=99, max_mapping=0.99)
+        self.tonemap = TonemapHDR(gamma=2.4, percentile=50, max_mapping=0.5)
+        # self.tonemap = TonemapHDR(gamma=2.4, percentile=99, max_mapping=0.99)
 
         if os.path.isdir(self._path):
             self._type = 'dir'

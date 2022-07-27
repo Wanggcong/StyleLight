@@ -136,7 +136,7 @@ class BaseCoach:
         if hyperparameters.pt_l2_lambda > 0:
             ### added
             # if True:# before rebuttal
-            if False:# before rebuttal
+            if True:# 
                 percentile = 0.9
                 real_images_singlemap = torch.mean(real_images, dim=1, keepdim=True)
                 r_percentile = torch.quantile(real_images_singlemap, percentile)
