@@ -50,10 +50,22 @@ pip install opencv-python
 
 
 ## Training 
-### Data pre-processing
+### Pre-process Datasets
+```
+python data_prepare_laval.py
+```
+### Train StyleLight
+```
+python train.py --outdir=./training-runs-paper512-cyclic-new-training-128x256-ws_plus_coor2-accepted --data=/mnt/disks/data/datasets/IndoorHDRDataset2018-128x256-data-splits/train --gpus=8 --cfg=paper256  --mirror=1 --aug=noaug
+```
+### Or Download inference models
+- Please download the inference model from the [goodle driver](http://indoor.hdrdb.com/).
+
+### Test lighting estimation and editing
+```
+python test_lighting.py
 ```
 
-```
 
 
 ## To-Do
