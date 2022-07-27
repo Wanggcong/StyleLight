@@ -50,6 +50,7 @@ pip install opencv-python
 - Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
 
 ### Pre-process Datasets
+- Set the variables from_folder (path to the laval dataset) and to_folder (path to save pre-processed data) in data_prepare_laval.py
 ```
 python data_prepare_laval.py
 ```
@@ -57,12 +58,19 @@ python data_prepare_laval.py
 ```
 python train.py --outdir=./training-runs-256x512 --data=/mnt/disks/data/datasets/IndoorHDRDataset2018-128x256-data-splits/train --gpus=8 --cfg=paper256  --mirror=1 --aug=noaug
 ```
+- --outdir is the path to save models and generated examples
+- --gpus is the number of gpus
+- --data is the path to the pre-processed data
+- --cfg is the configure of stylegan-ada
+- --mirror and --aug is data augmentation
+
 ### Or Download inference models
 - Please download the inference model from the [goodle driver](https://drive.google.com/file/d/1vHfwrtgk0EjZlS14Ye5lASJ0R4IWl_4w/view?usp=sharing).
 
 
 ## 4. Test 
 ### Lighting estimation and editing
+- Set paths in PTI_utils/hyperparameters.py
 ```
 python test_lighting.py
 ```
