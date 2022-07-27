@@ -10,14 +10,14 @@
 
 In **European Conference on Computer Vision (ECCV)**, 2022  
 
-## Prerequisites
+## 1.Prerequisites
 - Linux or macOS
 - Python 3
 - NVIDIA GPU + CUDA cuDNN(10.2)
 - PyTorch >= 1.7
 - OpenCV
 
-## Getting Started
+## 2.Getting Started
 
 ### Install Enviroment
 We recommend using the virtual environment (conda) to run the code easily.
@@ -45,7 +45,7 @@ pip install opencv-python
 
 
 
-## Training 
+## 3.Training 
 ### Download Dataset
 - Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
 
@@ -69,7 +69,7 @@ python test_lighting.py
 
 
 
-## To-Do
+## 4.To-Do
 - [x] Training code
 - [x] Inference model
 - [ ] Evaluation code
@@ -78,7 +78,7 @@ python test_lighting.py
 
 
 
-## Citation
+## 5.Citation
 
 If you find this useful for your research, please cite the our paper.
 
@@ -96,5 +96,5 @@ or
 Guangcong Wang, Yinuo Yang, Chen Change Loy, and Ziwei Liu. StyleLight: HDR Panorama Generation for Lighting Estimation and Editing, ECCV 2022.
 ```
 
-## Acknowledgments
+## 6.Acknowledgments
 This code is based on the [StyleGAN2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch) and [PTI](https://github.com/danielroich/PTI) codebase. 
