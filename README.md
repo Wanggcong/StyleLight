@@ -40,7 +40,6 @@ pip install OpenEXR
 pip install imageio-ffmpeg
 pip install ninja
 pip install opencv-python
-
 ```
 
 ### Download examples
