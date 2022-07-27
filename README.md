@@ -58,7 +58,7 @@ python data_prepare_laval.py
 python train.py --outdir=./training-runs-256x512 --data=/mnt/disks/data/datasets/IndoorHDRDataset2018-128x256-data-splits/train --gpus=8 --cfg=paper256  --mirror=1 --aug=noaug
 ```
 ### Or Download inference models
-- Please download the inference model from the [goodle driver](http://indoor.hdrdb.com/).
+- Please download the inference model from the [goodle driver](https://drive.google.com/file/d/1vHfwrtgk0EjZlS14Ye5lASJ0R4IWl_4w/view?usp=sharing).
 
 
 ## 4. Test 
