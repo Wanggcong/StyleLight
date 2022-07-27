@@ -50,7 +50,7 @@ pip install opencv-python
 - Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
 
 ### Pre-process Datasets
-- Set the variables the path to the laval dataset(from_folder) and the path to the path to save pre-processed data (to_folder) in data_prepare_laval.py
+- Set the variables **the path to the laval dataset(from_folder)** and **the path to the path to save pre-processed data (to_folder)** in data_prepare_laval.py
 ```
 python data_prepare_laval.py
 ```
@@ -70,8 +70,8 @@ python train.py --outdir=./training-runs-256x512 --data=/mnt/disks/data/datasets
 
 ## 4. Test 
 ### Lighting estimation and editing
-- Set paths (stylegan2_ada_ffhq) in PTI_utils/paths_config.py 
-- Set options (lighting estimation or lighting editing) in PTI_utils/hyperparameters.py
+- Set paths (**stylegan2_ada_ffhq**) in PTI_utils/paths_config.py 
+- Set options (**lighting estimation or lighting editing**) in PTI_utils/hyperparameters.py
 ```
 python test_lighting.py
 ```
