@@ -82,7 +82,7 @@ python test_lighting.py
 - [x] Training code
 - [x] Inference model
 - [ ] Evaluation code
-- [ ] Clean Training Code
+- [ ] Clean Code
 - [ ] Colab Demo
 
 
