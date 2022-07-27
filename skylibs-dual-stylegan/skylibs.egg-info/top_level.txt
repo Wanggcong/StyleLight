@@ -1,7 +1,0 @@
-envmap
-ezexr
-hdrio
-hdrtools
-hdrtools/tonemapping
-skydb
-tools3d
