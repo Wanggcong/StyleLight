@@ -27,18 +27,16 @@ first_inv_lr = 5e-3
 train_batch_size = 1
 use_last_w_pivots = False    ######
 
-###################for fov ldr-> panorama hdr###########################
-# # for fov ldr-> panorama hdr
+############### select one of the following options: lighting estimation or lighting editing #############################
 
+###################lighting estimation: fov ldr-> panorama hdr###########################
 # edit = False
 # pt_l2_lambda = 10
 # pt_lpips_lambda = 1
 # regulizer_l2_lambda = 0.01 #org 0.1
 # regulizer_lpips_lambda = 0.01 # org 0.1
 
-################### lighting editing ###########################
-# # for lighting editing
-
+################### lighting editing: lighting removal and addition ###########################
 edit = True
 pt_l2_lambda = 1
 pt_lpips_lambda = 1
