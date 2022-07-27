@@ -30,20 +30,20 @@ use_last_w_pivots = False    ######
 ###################for fov ldr-> panorama hdr###########################
 # # for fov ldr-> panorama hdr
 
-edit = False
-pt_l2_lambda = 10
-pt_lpips_lambda = 1
-regulizer_l2_lambda = 0.01 #org 0.1
-regulizer_lpips_lambda = 0.01 # org 0.1
+# edit = False
+# pt_l2_lambda = 10
+# pt_lpips_lambda = 1
+# regulizer_l2_lambda = 0.01 #org 0.1
+# regulizer_lpips_lambda = 0.01 # org 0.1
 
 ################### lighting editing ###########################
 # # for lighting editing
 
-# edit = True
-# pt_l2_lambda = 1
-# pt_lpips_lambda = 1
-# regulizer_l2_lambda = 0.01 #org 0.1
-# regulizer_lpips_lambda = 0.01 # org 0.1
-# edit = True
-# edit_steps = 20
-# percentile = 0.9
+edit = True
+pt_l2_lambda = 1
+pt_lpips_lambda = 1
+regulizer_l2_lambda = 0.01 #org 0.1
+regulizer_lpips_lambda = 0.01 # org 0.1
+edit = True
+edit_steps = 20
+percentile = 0.9

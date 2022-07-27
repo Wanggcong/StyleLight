@@ -86,26 +86,6 @@ class BaseEditor:
         return w
 
     def calc_inversions(self, image, image_name, bbox=None):
-        # mask_fname = '/home/deep/projects/mini-stylegan2/crop10.jpg'
-        # mask_pil = PIL.Image.open(mask_fname).convert('RGB')
-        # use_debug = True
-        # if use_debug:
-        #     print('###mask_pil size:', np.array(mask_pil).shape)
-        # mask_pil = mask_pil.resize((256, 128), PIL.Image.LANCZOS)
-
-        # mask_pil_sum_c=np.sum(mask_pil,axis=2)
-        # mask_pil_sum_c_row = np.sum(mask_pil_sum_c,axis=1)
-        # mask_pil_sum_c_col = np.sum(mask_pil_sum_c,axis=0)
-        # row_min = np.argwhere(mask_pil_sum_c_row).min()+10 #128
-        # row_max = np.argwhere(mask_pil_sum_c_row).max()-5
-
-        # col_min = np.argwhere(mask_pil_sum_c_col).min()+10 #256
-        # col_max = np.argwhere(mask_pil_sum_c_col).max()-10  
-
-
-        # bbox = [row_min, row_max, col_min, col_max] 
-
-
         if hyperparameters.first_inv_type == 'w+':
             w = self.get_e4e_inversion(image)
 
@@ -139,15 +119,7 @@ class BaseEditor:
         loss = 0.0
 
         if hyperparameters.pt_l2_lambda > 0:
-            ### added
-            # percentile = 0.9
-            # real_images_singlemap = torch.mean(real_images, dim=1, keepdim=True)
-            # r_percentile = torch.quantile(real_images_singlemap, percentile)
-            # light_mask = (real_images_singlemap > r_percentile)*1.0
-
-            l2_loss_val = l2_loss.l2_loss(generated_images, real_images)#+10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            # l2_loss_val = l2_loss.l2_loss(generated_images*(1-light_mask), real_images*(1-light_mask))+torch.mean(torch.abs(generated_images*light_mask))#10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            
+            l2_loss_val = l2_loss.l2_loss(generated_images, real_images)
 
             if self.use_wandb:
                 wandb.log({f'MSE_loss_val_{log_name}': l2_loss_val.detach().cpu()}, step=global_config.training_step)
@@ -177,15 +149,7 @@ class BaseEditor:
             mask[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]] = 0        
 
         if hyperparameters.pt_l2_lambda > 0:
-            ### added
-            # percentile = 0.9
-            # real_images_singlemap = torch.mean(real_images, dim=1, keepdim=True)
-            # r_percentile = torch.quantile(real_images_singlemap, percentile)
-            # light_mask = (real_images_singlemap > r_percentile)*1.0
-
-            l2_loss_val = l2_loss.l2_loss(generated_images*mask, real_images*mask)#+10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            # l2_loss_val = l2_loss.l2_loss(generated_images*(1-light_mask), real_images*(1-light_mask))+torch.mean(torch.abs(generated_images*light_mask))#10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            
+            l2_loss_val = l2_loss.l2_loss(generated_images*mask, real_images*mask)
 
             if self.use_wandb:
                 wandb.log({f'MSE_loss_val_{log_name}': l2_loss_val.detach().cpu()}, step=global_config.training_step)
@@ -224,17 +188,8 @@ class BaseEditor:
         loss = 0.0
 
         if hyperparameters.pt_l2_lambda > 0:
-            ### added
-            # percentile = 0.9
-            # real_images_singlemap = torch.mean(real_images, dim=1, keepdim=True)
-            # r_percentile = torch.quantile(real_images_singlemap, percentile)
-            # light_mask = (real_images_singlemap > r_percentile)*1.0
-
             ratio = mask.sum()/(mask.shape[2]*mask.shape[3])
-
             l2_loss_val = l2_loss.l2_loss(generated_images_*mask, generated_images*mask)/ratio+l2_loss.l2_loss(generated_images_*(1-mask), real_images*(1-mask))/(1-ratio)
-            # l2_loss_val = l2_loss.l2_loss(generated_images*(1-light_mask), real_images*(1-light_mask))+torch.mean(torch.abs(generated_images*light_mask))#10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            
 
             if self.use_wandb:
                 wandb.log({f'MSE_loss_val_{log_name}': l2_loss_val.detach().cpu()}, step=global_config.training_step)
@@ -247,11 +202,6 @@ class BaseEditor:
                 wandb.log({f'LPIPS_loss_val_{log_name}': loss_lpips.detach().cpu()}, step=global_config.training_step)
             loss += loss_lpips * hyperparameters.pt_lpips_lambda
 
-        # if use_ball_holder and hyperparameters.use_locality_regularization:
-        #     ball_holder_loss_val = self.space_regulizer.space_regulizer_loss(new_G, w_batch, use_wandb=self.use_wandb)
-        #     loss += ball_holder_loss_val
-
-        # return loss, l2_loss_val, loss_lpips
         return loss
 
 
@@ -259,24 +209,17 @@ class BaseEditor:
         loss = 0.0
 
         if hyperparameters.pt_l2_lambda > 0:
-            ### added
-            # hyperparameters.percentile = 0.8
-            # real_images_singlemap = torch.mean(real_images, dim=1, keepdim=True)
+
             r_percentile = torch.quantile(real_images, hyperparameters.percentile)
             light_mask = (real_images > r_percentile)*1.0
-            # l2_loss_val = l2_loss.l2_loss(generated_images, real_images) #+10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            # l2_loss_val = 0.01*l2_loss.l2_loss(generated_images*(1-light_mask), real_images*(1-light_mask))+torch.mean(torch.abs(generated_images*light_mask))#10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
             l2_loss_val = torch.mean(generated_images*light_mask)
-            # print('generated_images size:', generated_images.shape)
-            # l2_loss_val2 = -torch.mean(generated_images[:,:,150:155,150:155])
-            
+
             if self.use_wandb:
                 wandb.log({f'MSE_loss_val_{log_name}': l2_loss_val.detach().cpu()}, step=global_config.training_step)
             loss += l2_loss_val * hyperparameters.pt_l2_lambda
-            # loss += l2_loss_val2 * hyperparameters.pt_l2_lambda
+
         
         if hyperparameters.pt_lpips_lambda > 0 and False:
-            # loss_lpips = self.lpips_loss(generated_images, real_images)
             loss_lpips = self.lpips_loss(generated_images*(1-light_mask), real_images*(1-light_mask))
             loss_lpips = torch.squeeze(loss_lpips)
             if self.use_wandb:
@@ -287,26 +230,12 @@ class BaseEditor:
             ball_holder_loss_val = self.space_regulizer.space_regulizer_loss(new_G, w_batch, use_wandb=self.use_wandb)
             loss += ball_holder_loss_val
 
-        # return loss, l2_loss_val, loss_lpips
         return loss
 
     def calc_light_loss_remove_one_light(self, generated_images, real_images, log_name, new_G, use_ball_holder, w_batch, bbox=[150,155,150,155]):
         loss = 0.0
 
         if hyperparameters.pt_l2_lambda > 0:
-            ### added
-            # hyperparameters.percentile = 0.8
-            # real_images_singlemap = torch.mean(real_images, dim=1, keepdim=True)
-            # r_percentile = torch.quantile(real_images_singlemap, hyperparameters.percentile)
-            # light_mask = (real_images_singlemap > r_percentile)*1.0
-
-            # l2_loss_val = l2_loss.l2_loss(generated_images, real_images) #+10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            # l2_loss_val = 0.01*l2_loss.l2_loss(generated_images*(1-light_mask), real_images*(1-light_mask))+torch.mean(torch.abs(generated_images*light_mask))#10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            # l2_loss_val = torch.mean(torch.abs(generated_images*light_mask))
-            # print('generated_images size:', generated_images.shape)
-            # if bbox is not None:
-            #     l2_loss_val = torch.mean(generated_images[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]])
-            
             mask = torch.zeros_like(generated_images)
             mask[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]] = 1
             mask_pixels = (bbox[1]-bbox[0])*(bbox[3]-bbox[2])
@@ -316,7 +245,6 @@ class BaseEditor:
             loss += 5.0*l2_loss_val * hyperparameters.pt_l2_lambda    #########
 
             if bbox is not None:
-                # l2_loss_val2 = torch.mean(generated_images[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]])
                 l2_loss_val2 = torch.sum(generated_images*mask)/mask_pixels
 
             if self.use_wandb:
@@ -326,7 +254,6 @@ class BaseEditor:
                 loss += l2_loss_val2 * hyperparameters.pt_l2_lambda
         
         if hyperparameters.pt_lpips_lambda > 0:
-            # loss_lpips = self.lpips_loss(generated_images, real_images)
             loss_lpips = self.lpips_loss(generated_images*(1-mask), real_images*(1-mask))
             loss_lpips = torch.squeeze(loss_lpips)
             if self.use_wandb:
@@ -337,7 +264,6 @@ class BaseEditor:
             ball_holder_loss_val = self.space_regulizer.space_regulizer_loss(new_G, w_batch, use_wandb=self.use_wandb)
             loss += ball_holder_loss_val
 
-        # return loss, l2_loss_val, loss_lpips
         return loss
 
 
@@ -345,17 +271,6 @@ class BaseEditor:
         loss = 0.0
 
         if hyperparameters.pt_l2_lambda > 0:
-            ### added
-            # hyperparameters.percentile = 0.8
-            # real_images_singlemap = torch.mean(real_images, dim=1, keepdim=True)
-            # r_percentile = torch.quantile(real_images_singlemap, hyperparameters.percentile)
-            # light_mask = (real_images_singlemap > r_percentile)*1.0
-
-            # l2_loss_val = l2_loss.l2_loss(generated_images, real_images) #+10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            # l2_loss_val = 0.01*l2_loss.l2_loss(generated_images*(1-light_mask), real_images*(1-light_mask))+torch.mean(torch.abs(generated_images*light_mask))#10*l2_loss.l2_loss(real_images*light_mask, generated_images*light_mask)
-            # l2_loss_val = torch.mean(torch.abs(generated_images*light_mask))
-            # print('generated_images size:', generated_images.shape)
-
             mask = torch.zeros_like(generated_images)
             mask[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]] = 1
             mask_pixels = (bbox[1]-bbox[0])*(bbox[3]-bbox[2])
@@ -365,7 +280,6 @@ class BaseEditor:
             loss += 5.0*l2_loss_val * hyperparameters.pt_l2_lambda    #######3
 
             if bbox is not None:
-                # l2_loss_val2 = -torch.mean(generated_images[:,:,bbox[0]:bbox[1],bbox[2]:bbox[3]])
                 l2_loss_val2 = -torch.sum(generated_images*mask)/mask_pixels
 
             
@@ -376,7 +290,6 @@ class BaseEditor:
                 loss += 1.0*l2_loss_val2 * hyperparameters.pt_l2_lambda
         
         if hyperparameters.pt_lpips_lambda > 0:
-            # loss_lpips = self.lpips_loss(generated_images, real_images)
             loss_lpips = self.lpips_loss(generated_images*(1-mask), real_images*(1-mask))
             loss_lpips = torch.squeeze(loss_lpips)
             if self.use_wandb:
@@ -387,7 +300,6 @@ class BaseEditor:
             ball_holder_loss_val = self.space_regulizer.space_regulizer_loss(new_G, w_batch, use_wandb=self.use_wandb)
             loss += ball_holder_loss_val
 
-        # return loss, l2_loss_val, loss_lpips
         return loss
 
 
