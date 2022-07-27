@@ -17,9 +17,7 @@ In **European Conference on Computer Vision (ECCV)**, 2022
 - PyTorch >= 1.7
 - OpenCV
 
-## 2. Getting Started
-
-### Install Enviroment
+## 2. Install
 We recommend using the virtual environment (conda) to run the code easily.
 
 ```
