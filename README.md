@@ -19,7 +19,7 @@ In **European Conference on Computer Vision (ECCV)**, 2022
 
 ## Getting Started
 
-### Enviroment
+### Install Enviroment
 We recommend using the virtual environment (conda) to run the code easily.
 
 ```
@@ -42,14 +42,13 @@ pip install ninja
 pip install opencv-python
 ```
 
-### Download pretrained models 
 
-
-### Download Dataset
-- Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
 
 
 ## Training 
+### Download Dataset
+- Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
+
 ### Pre-process Datasets
 ```
 python data_prepare_laval.py
@@ -61,7 +60,9 @@ python train.py --outdir=./training-runs-paper512-cyclic-new-training-128x256-ws
 ### Or Download inference models
 - Please download the inference model from the [goodle driver](http://indoor.hdrdb.com/).
 
-### Test lighting estimation and editing
+
+## Test 
+### Lighting estimation and editing
 ```
 python test_lighting.py
 ```
