@@ -50,7 +50,7 @@ pip install opencv-python
 - Please download the Laval dataset from the [official website](http://indoor.hdrdb.com/).
 
 ### Pre-process Datasets
-- Set the variables from_folder (path to the laval dataset) and to_folder (path to save pre-processed data) in data_prepare_laval.py
+- Set the variables the path to the laval dataset(from_folder) and the path to the path to save pre-processed data (to_folder) in data_prepare_laval.py
 ```
 python data_prepare_laval.py
 ```
