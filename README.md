@@ -11,12 +11,7 @@
 [Guangcong Wang](https://wanggcong.github.io/), [Yinuo Yang](https://www.linkedin.com/in/yinuo-yang-3a55041b8/), [Chen Change Loy](https://www.mmlab-ntu.com/person/ccloy/), [Ziwei Liu](https://liuziwei7.github.io/) 
  S-Lab, Nanyang Technological University
 
- In **European Conference on Computer Vision (ECCV)**, 2022  
-
-
-<p align='left'>  
-  <img src='imgs/metrics.png' width='60%'/>  
-</p>
+In **European Conference on Computer Vision (ECCV)**, 2022  
 
 ## Prerequisites
 - Linux or macOS
@@ -56,19 +51,7 @@ pip install opencv-python
 
 
 ### Download pretrained models 
-- Face 
-  - Download the pretrained model from [this link](https://drive.google.com/file/d/1rqZfQ5X1zVLvObqzJZFCG5tFMPGGHu9u/view?usp=sharing) and unzip it in ``checkpoints`` folder.
-  - To test the model. 
-    ```
-    bash scripts/face/test.sh
-    ```
 
-- Cityscapes  
-  -  Download the pretrained model from [this link](https://drive.google.com/file/d/1AOAen8rcRhcJHX7QjyWAItCN243mHpxA/view?usp=sharing) and unzip it in ``checkpoints`` folder.
-  - To test the model. 
-    ```
-    bash scripts/street/test.sh
-    ```
 
 ## Training 
 
