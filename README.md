@@ -18,7 +18,7 @@ In **European Conference on Computer Vision (ECCV)**, 2022
 - PyTorch >= 1.7
 - OpenCV
 
-## 2. Install
+## 2. Installation
 We recommend using the virtual environment (conda) to run the code easily.
 
 ```
@@ -104,5 +104,16 @@ or
 Guangcong Wang, Yinuo Yang, Chen Change Loy, and Ziwei Liu. StyleLight: HDR Panorama Generation for Lighting Estimation and Editing, ECCV 2022.
 ```
 
-## 7. Acknowledgments
+## 7. Related Links
+[Relighting4D:Neural Relightable Human from Videos](https://github.com/FrozenBurning/Relighting4D)
+
+[Gardner et al. Learning to Predict Indoor Illumination from a Single Image, SIGGRAPH Asia, 2017.](http://vision.gel.ulaval.ca/~jflalonde/publications/projects/deepIndoorLight/index.html)
+
+[Gardner et al. Deep Parametric Indoor Lighting Estimation, ICCV 2019.](http://vision.gel.ulaval.ca/~jflalonde/publications/projects/deepIndoorLight/index.html)
+
+[Zhan et al. EMlight:Lighting Estimation via Spherical Distribution Approximation, AAAI 2021.](https://github.com/fnzhan/Illumination-Estimation)
+
+
+
+## 8. Acknowledgments
 This code is based on the [StyleGAN2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch) and [PTI](https://github.com/danielroich/PTI) codebase. 
