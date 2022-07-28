@@ -64,7 +64,7 @@ python train.py --outdir=./training-runs-256x512 --data=/mnt/disks/data/datasets
 - --mirror and --aug is data augmentation
 
 ### Or download inference model
-- Please download the inference model from the [goodle driver](https://drive.google.com/file/d/1vHfwrtgk0EjZlS14Ye5lASJ0R4IWl_4w/view?usp=sharing).
+- Please download the inference model from the [Google Drive](https://drive.google.com/file/d/1vHfwrtgk0EjZlS14Ye5lASJ0R4IWl_4w/view?usp=sharing).
 
 
 ## 4. Test 
@@ -105,7 +105,7 @@ Guangcong Wang, Yinuo Yang, Chen Change Loy, and Ziwei Liu. StyleLight: HDR Pano
 ```
 
 ## 7. Related Links
-[Relighting4D:Neural Relightable Human from Videos](https://github.com/FrozenBurning/Relighting4D)
+[Relighting4D:Neural Relightable Human from Videos, ECCV 2022](https://github.com/FrozenBurning/Relighting4D)
 
 [Gardner et al. Learning to Predict Indoor Illumination from a Single Image, SIGGRAPH Asia, 2017.](http://vision.gel.ulaval.ca/~jflalonde/publications/projects/deepIndoorLight/index.html)
 
