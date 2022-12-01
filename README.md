@@ -106,9 +106,9 @@ Guangcong Wang, Yinuo Yang, Chen Change Loy, and Ziwei Liu. StyleLight: HDR Pano
 
 ## 7. Related Links
 [Text2Light: Zero-Shot Text-Driven HDR Panorama Generation, TOG 2022 (Proc. SIGGRAPH Asia)](https://frozenburning.github.io/projects/text2light/)
-
+[Traditional Classification Neural Networks are Good Generators: They are Competitive with DDPMs and GANs, Technical report, 2022](https://classifier-as-generator.github.io/)
 [Relighting4D: Neural Relightable Human from Videos, ECCV 2022](https://github.com/FrozenBurning/Relighting4D)
-
+[Fast-Vid2Vid: Spatial-Temporal Compression for Video-to-Video Synthesis, ECCV 2022](https://fast-vid2vid.github.io/)
 [Gardner et al. Learning to Predict Indoor Illumination from a Single Image, SIGGRAPH Asia, 2017.](http://vision.gel.ulaval.ca/~jflalonde/publications/projects/deepIndoorLight/index.html)
 
 [Gardner et al. Deep Parametric Indoor Lighting Estimation, ICCV 2019.](http://vision.gel.ulaval.ca/~jflalonde/publications/projects/deepIndoorLight/index.html)
