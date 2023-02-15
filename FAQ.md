@@ -4,7 +4,7 @@ Q1: C++11 is required to use dlib, but the version of GCC you are using is too o
 
 A1: check the gcc version in the terminal by: 
 
-- 1) gcc --version, e.g., /usr/local/bin/gcc**
+- 1) gcc --version, e.g., /usr/local/bin/gcc
 
 - 2) set the path in ~/.bashrc : export CC=/usr/local/bin/gcc
 
