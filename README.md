@@ -122,4 +122,4 @@ Guangcong Wang, Yinuo Yang, Chen Change Loy, and Ziwei Liu. StyleLight: HDR Pano
 
 
 ## 8. Acknowledgments
-This code is based on the [StyleGAN2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch), [PTI](https://github.com/danielroich/PTI), and [skylibs](https://github.com/soravux/skylibs) codebases. 
+This code is based on the [StyleGAN2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch), [PTI](https://github.com/danielroich/PTI), and [skylibs](https://github.com/soravux/skylibs) codebases. We also thank [Jean-François Lalonde](http://vision.gel.ulaval.ca/~jflalonde/) for sharing experience.
