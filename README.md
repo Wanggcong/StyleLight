@@ -109,7 +109,7 @@ Guangcong Wang, Yinuo Yang, Chen Change Loy, and Ziwei Liu. StyleLight: HDR Pano
 
 [CaG: Traditional Classification Neural Networks are Good Generators: They are Competitive with DDPMs and GANs, Technical report, 2022](https://classifier-as-generator.github.io/)
 
-[SceneDreamer: Unbounded 3D Scene Generation from 2D Image Collections](https://scene-dreamer.github.io/)
+[SceneDreamer: Unbounded 3D Scene Generation from 2D Image Collections, Arxiv 2023](https://scene-dreamer.github.io/)
 
 [Relighting4D: Neural Relightable Human from Videos, ECCV 2022](https://github.com/FrozenBurning/Relighting4D)
 
