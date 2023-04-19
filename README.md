@@ -11,6 +11,12 @@ S-Lab, Nanyang Technological University
 
 In **European Conference on Computer Vision (ECCV)**, 2022  
 
+## 0. Update
+
+- Panorama warping.
+
+
+
 ## 1. Prerequisites
 - Linux or macOS
 - Python 3
