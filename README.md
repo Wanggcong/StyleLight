@@ -13,7 +13,7 @@ In **European Conference on Computer Vision (ECCV)**, 2022
 
 ## 0. Update
 
-- Panorama warping.
+- [2023-04-19] Panorama warping. If you render an object is at the center of the panorama, you can warp the panoramas with warping.py. 
 
 
 
