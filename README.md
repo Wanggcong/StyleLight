@@ -25,7 +25,7 @@ In **European Conference on Computer Vision (ECCV)**, 2022
 - OpenCV
 
 ## 2. Installation
-We recommend using the virtual environment (conda) to run the code easily.
+We recommend using the virtual environment (conda) to run the code easily
 
 ```
 conda create -n StyleLight python=3.7 -y
