@@ -86,9 +86,8 @@ python test_lighting.py
 ## 5. To-Do
 - [x] Training code
 - [x] Inference model
-- [ ] Evaluation code
-- [ ] Clean Code
-- [ ] Colab Demo
+- [x] Evaluation code
+
 
 
 
